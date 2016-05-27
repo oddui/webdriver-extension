@@ -2,7 +2,6 @@ const gulp = require('gulp');
 const $ = require('gulp-load-plugins')();
 const del = require('del');
 const runSequence = require('run-sequence');
-const wiredep = require('wiredep').stream;
 
 gulp.task('extras', () => {
   return gulp.src([
@@ -29,22 +28,6 @@ gulp.task('lint', lint('app/scripts/**/*.js', {
     es6: false
   }
 }));
-
-gulp.task('images', () => {
-  return gulp.src('app/images/**/*')
-    .pipe($.if($.if.isFile, $.cache($.imagemin({
-      progressive: true,
-      interlaced: true,
-      // don't remove IDs from SVGs, they are often used
-      // as hooks for embedding and styling
-      svgoPlugins: [{cleanupIDs: false}]
-    }))
-    .on('error', function (err) {
-      console.log(err);
-      this.end();
-    })))
-    .pipe(gulp.dest('dist/images'));
-});
 
 gulp.task('html',  () => {
   return gulp.src('app/*.html')
@@ -89,19 +72,10 @@ gulp.task('watch', ['lint', 'html'], () => {
   ]).on('change', $.livereload.reload);
 
   gulp.watch('app/scripts/**/*.js', ['lint']);
-  gulp.watch('bower.json', ['wiredep']);
 });
 
 gulp.task('size', () => {
   return gulp.src('dist/**/*').pipe($.size({title: 'build', gzip: true}));
-});
-
-gulp.task('wiredep', () => {
-  gulp.src('app/*.html')
-    .pipe(wiredep({
-      ignorePath: /^(\.\.\/)*\.\./
-    }))
-    .pipe(gulp.dest('app'));
 });
 
 gulp.task('package', function () {
@@ -114,7 +88,7 @@ gulp.task('package', function () {
 gulp.task('build', (cb) => {
   runSequence(
     'lint', 'chromeManifest',
-    ['html', 'images', 'extras'],
+    ['html', 'extras'],
     'size', cb);
 });
 

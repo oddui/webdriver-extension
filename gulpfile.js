@@ -8,7 +8,7 @@ gulp.task('extras', () => {
     'app/*.*',
     'app/_locales/**',
     '!app/*.json',
-    '!app/*.html',
+    '!app/*.html'
   ], {
     base: 'app',
     dot: true
@@ -23,11 +23,7 @@ function lint(files, options) {
   };
 }
 
-gulp.task('lint', lint('app/scripts/**/*.js', {
-  env: {
-    es6: false
-  }
-}));
+gulp.task('lint', lint('app/scripts/**/*.js'));
 
 gulp.task('html',  () => {
   return gulp.src('app/*.html')
@@ -50,7 +46,7 @@ gulp.task('chromeManifest', () => {
           'scripts/chromereload.js'
         ]
       }
-  }))
+    }))
   .pipe($.if('*.css', $.cleanCss({compatibility: '*'})))
   .pipe($.if('*.js', $.sourcemaps.init()))
   .pipe($.if('*.js', $.uglify()))

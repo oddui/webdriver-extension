@@ -25,5 +25,8 @@
     "sinon": "^1.17.4",
     "style-loader": "^0.13.1",
     "webpack": "^1.13.1"
+  },
+  "dependencies": {
+    "selenium-webdriver": "^2.53.2"
   }
 }

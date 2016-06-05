@@ -3,6 +3,6 @@ require('mocha/mocha.js');
 
 mocha.setup('bdd');
 
-require('./spec/test.js');
+require('./spec/version_spec.js');
 
 mocha.run();

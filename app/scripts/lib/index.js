@@ -1,1 +1,3 @@
-console.log('index.js');
+const version = require('./version');
+
+exports.version = version;

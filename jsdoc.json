@@ -1,0 +1,16 @@
+{
+  "plugins": ["plugins/markdown"],
+  "opts": {
+    "encoding": "utf8",
+    "destination": "./docs/gen",
+    "recurse": true
+  },
+  "source": {
+    "include": ["README.md", "app/scripts"]
+  },
+  "templates": {
+    "default": {
+      "useLongnameInNav": true
+    }
+  }
+}

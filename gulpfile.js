@@ -33,7 +33,10 @@ gulp.task('webpack', (cb) => {
       throw err;
     }
     $.util.log('[webpack]', stats.toString({
-      colors: $.util.colors.supportsColor
+      colors: $.util.colors.supportsColor,
+      chunks: false,
+      chunkModules: false,
+      hash: false
     }));
     cb();
   });

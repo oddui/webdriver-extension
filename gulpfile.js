@@ -2,13 +2,14 @@ const gulp = require('gulp');
 const $ = require('gulp-load-plugins')();
 const del = require('del');
 const runSequence = require('run-sequence');
+const webpack = require('webpack');
 
 gulp.task('extras', () => {
   return gulp.src([
     'app/*.*',
     'app/_locales/**',
-    '!app/*.json',
-    '!app/*.html'
+    'app/images/**',
+    '!app/*.json'
   ], {
     base: 'app',
     dot: true
@@ -24,6 +25,18 @@ function lint(files, options) {
 }
 
 gulp.task('lint', lint('app/scripts/**/*.js'));
+
+gulp.task('webpack', (cb) => {
+  webpack(require('./webpack.config.js'), function(err, stats) {
+    if(err) {
+      throw err;
+    }
+    $.util.log('[webpack]', stats.toString({
+      colors: $.util.colors.supportsColor
+    }));
+    cb();
+  });
+});
 
 gulp.task('chromeManifest', () => {
   return gulp.src('app/manifest.json')
@@ -66,7 +79,7 @@ gulp.task('package', function () {
 gulp.task('build', (cb) => {
   runSequence(
     'lint', 'chromeManifest',
-    ['extras'],
+    ['webpack', 'extras'],
     'size', cb);
 });
 

@@ -12,7 +12,9 @@ module.exports = [
     entry: PATHS.lib,
     output: {
       path: PATHS.dist,
-      filename: 'bundle.js'
+      filename: 'bundle.js',
+      library: 'webdriver-extension',
+      libraryTarget: 'umd'
     }
   },
   {

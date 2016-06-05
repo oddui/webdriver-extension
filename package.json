@@ -8,6 +8,8 @@
     "docs": "jsdoc -c ./jsdoc.json"
   },
   "devDependencies": {
+    "chai": "^3.5.0",
+    "css-loader": "^0.23.1",
     "del": "^2.2.0",
     "gulp": "^3.9.1",
     "gulp-chrome-manifest": "0.0.13",
@@ -18,7 +20,10 @@
     "gulp-util": "^3.0.7",
     "gulp-zip": "^3.2.0",
     "jsdoc": "^3.4.0",
+    "mocha": "^2.5.3",
     "run-sequence": "^1.1.5",
+    "sinon": "^1.17.4",
+    "style-loader": "^0.13.1",
     "webpack": "^1.13.1"
   }
 }

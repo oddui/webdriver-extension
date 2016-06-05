@@ -9,6 +9,7 @@ gulp.task('extras', () => {
     'app/*.*',
     'app/_locales/**',
     'app/images/**',
+    'app/test/*.*',
     '!app/*.json'
   ], {
     base: 'app',
@@ -54,15 +55,19 @@ gulp.task('chromeManifest', () => {
 
 gulp.task('clean', del.bind(null, ['.tmp', 'dist']));
 
-gulp.task('watch', ['lint'], () => {
+gulp.task('watch', ['lint', 'webpack'], () => {
   $.livereload.listen();
 
   gulp.watch([
+    'app/test/bundle.js',
     'app/images/**/*',
     'app/_locales/**/*.json'
   ]).on('change', $.livereload.reload);
 
-  gulp.watch('app/scripts/**/*.js', ['lint']);
+  gulp.watch([
+    'app/scripts/**/*.js',
+    'app/test/spec/**/*.js'
+  ], ['lint', 'webpack']);
 });
 
 gulp.task('size', () => {

@@ -25,17 +25,6 @@ function lint(files, options) {
 
 gulp.task('lint', lint('app/scripts/**/*.js'));
 
-gulp.task('html',  () => {
-  return gulp.src('app/*.html')
-    .pipe($.useref({searchPath: ['.tmp', 'app', '.']}))
-    .pipe($.sourcemaps.init())
-    .pipe($.if('*.js', $.uglify()))
-    .pipe($.if('*.css', $.cleanCss({compatibility: '*'})))
-    .pipe($.sourcemaps.write())
-    .pipe($.if('*.html', $.htmlmin({removeComments: true, collapseWhitespace: true})))
-    .pipe(gulp.dest('dist'));
-});
-
 gulp.task('chromeManifest', () => {
   return gulp.src('app/manifest.json')
     .pipe($.chromeManifest({
@@ -47,23 +36,16 @@ gulp.task('chromeManifest', () => {
         ]
       }
     }))
-  .pipe($.if('*.css', $.cleanCss({compatibility: '*'})))
-  .pipe($.if('*.js', $.sourcemaps.init()))
-  .pipe($.if('*.js', $.uglify()))
-  .pipe($.if('*.js', $.sourcemaps.write('.')))
   .pipe(gulp.dest('dist'));
 });
 
 gulp.task('clean', del.bind(null, ['.tmp', 'dist']));
 
-gulp.task('watch', ['lint', 'html'], () => {
+gulp.task('watch', ['lint'], () => {
   $.livereload.listen();
 
   gulp.watch([
-    'app/*.html',
-    'app/scripts/**/*.js',
     'app/images/**/*',
-    'app/styles/**/*',
     'app/_locales/**/*.json'
   ]).on('change', $.livereload.reload);
 
@@ -77,14 +59,14 @@ gulp.task('size', () => {
 gulp.task('package', function () {
   var manifest = require('./dist/manifest.json');
   return gulp.src('dist/**')
-      .pipe($.zip('webdriver-extension-' + manifest.version + '.zip'))
-      .pipe(gulp.dest('package'));
+    .pipe($.zip('webdriver-extension-' + manifest.version + '.zip'))
+    .pipe(gulp.dest('package'));
 });
 
 gulp.task('build', (cb) => {
   runSequence(
     'lint', 'chromeManifest',
-    ['html', 'extras'],
+    ['extras'],
     'size', cb);
 });
 

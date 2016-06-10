@@ -6,7 +6,9 @@
     "node": ">=4.2.0"
   },
   "scripts": {
-    "docs": "jsdoc -c ./jsdoc.json"
+    "docs": "jsdoc -c ./jsdoc.json",
+    "test": "npm run unit",
+    "unit": "mocha app/test/spec"
   },
   "devDependencies": {
     "chai": "^3.5.0",

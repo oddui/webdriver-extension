@@ -1,29 +1,34 @@
 const path = require('path');
-
-const PATHS = {
-  app: path.join(__dirname, 'app'),
+const paths = {
   lib: path.join(__dirname, 'app/scripts/lib'),
-  test: path.join(__dirname, 'app/test'),
-  dist: path.join(__dirname, 'dist')
+  test: path.join(__dirname, 'app/test')
 };
+const loaders = [
+  { test: /\.css$/, loader: 'style!css' },
+  { test: /\.json$/, loader: 'json' }
+];
 
 module.exports = [
   {
-    entry: PATHS.lib,
+    entry: paths.lib,
     output: {
-      path: PATHS.lib,
+      path: paths.lib,
       filename: 'bundle.js',
       library: 'webdriver-extension',
       libraryTarget: 'umd'
+    },
+    module: {
+      loaders: loaders
     }
   },
   {
-    entry: PATHS.test,
+    entry: paths.test,
     output: {
-      path: PATHS.test,
+      path: paths.test,
       filename: 'bundle.js'
     },
     module: {
+      loaders: loaders,
       noParse: [
         /node_modules\/mocha\/mocha\.js$/,
         /node_modules\/sinon\//

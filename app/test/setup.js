@@ -1,3 +1,0 @@
-(function() {
-  mocha.setup('bdd');
-})();

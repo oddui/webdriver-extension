@@ -3,6 +3,8 @@ temp
 .tmp
 dist
 .sass-cache
-app/bower_components
 package
 docs/gen
+
+bundle.js
+bundle.js.map

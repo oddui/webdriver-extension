@@ -4,6 +4,7 @@ temp
 dist
 .sass-cache
 package
+coverage
 docs/gen
 
 bundle.js

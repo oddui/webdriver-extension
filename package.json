@@ -9,10 +9,12 @@
     "docs": "jsdoc -c ./jsdoc.json",
     "test": "npm run unit",
     "unit": "mocha app/test/spec",
-    "coverage": "istanbul cover _mocha -- app/test/spec"
+    "coverage": "istanbul cover _mocha -- app/test/spec",
+    "coveralls": "npm run coverage && cat ./coverage/lcov.info | coveralls"
   },
   "devDependencies": {
     "chai": "^3.5.0",
+    "coveralls": "^2.11.9",
     "css-loader": "^0.23.1",
     "del": "^2.2.0",
     "gulp": "^3.9.1",

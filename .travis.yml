@@ -5,4 +5,5 @@ node_js:
   - "node"
 dist: trusty
 script:
-  - "npm run unit"
+  - npm run unit
+  - npm run coveralls

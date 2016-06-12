@@ -8,10 +8,13 @@
   "scripts": {
     "docs": "jsdoc -c ./jsdoc.json",
     "test": "npm run unit",
-    "unit": "mocha app/test/spec"
+    "unit": "mocha app/test/spec",
+    "coverage": "istanbul cover _mocha -- app/test/spec",
+    "coveralls": "npm run coverage && cat ./coverage/lcov.info | coveralls"
   },
   "devDependencies": {
     "chai": "^3.5.0",
+    "coveralls": "^2.11.9",
     "css-loader": "^0.23.1",
     "del": "^2.2.0",
     "gulp": "^3.9.1",
@@ -22,6 +25,7 @@
     "gulp-size": "^2.1.0",
     "gulp-util": "^3.0.7",
     "gulp-zip": "^3.2.0",
+    "istanbul": "^0.4.3",
     "jsdoc": "^3.4.0",
     "json-loader": "^0.5.4",
     "mocha": "^2.5.3",

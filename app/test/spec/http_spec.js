@@ -1,30 +1,24 @@
-var expect = require('chai').expect,
+'use strict';
+
+const expect = require('chai').expect,
   sinon =  require('sinon'),
-  http = require('../../scripts/lib/http'),
-  HttpRequest = http.HttpRequest,
-  HttpResponse = http.HttpResponse,
-  HttpClient = http.HttpClient;
+  http = require('../../src/lib/http'),
+  fromXhr = http.fromXhr,
+  Request = http.Request,
+  Response = http.Response,
+  HttpClient = http.Client;
 
-describe('HttpRequest', function() {
-  var request, METHOD = 'GET', PATH = '/path';
 
-  beforeEach(function() {
-    request = new HttpRequest(METHOD, PATH);
+describe('http', function() {
+
+  ['Request', 'Response', 'Executor', 'Client'].forEach(function(func) {
+    it(`exports ${func}`, function() {
+      expect(http[func]).not.to.be.undefined;
+    });
   });
-
-  it('sets method', function() {
-    expect(request.method).to.equal(METHOD);
-  });
-
-  it('sets path', function() {
-    expect(request.path).to.equal(PATH);
-  });
-});
-
-describe('HttpResponse', function() {
 
   describe('fromXhr', function() {
-    var mockXhr;
+    let mockXhr;
 
     beforeEach(function() {
       mockXhr = {
@@ -35,19 +29,19 @@ describe('HttpResponse', function() {
     });
 
     it('sets status', function() {
-      var response = HttpResponse.fromXhr(mockXhr);
+      let response = fromXhr(mockXhr);
       expect(response.status).to.equal(mockXhr.status);
     });
 
     it('strips null characters from response body', function() {
       mockXhr.responseText = '\x00foo\x00\x00bar\x00';
 
-      var response = HttpResponse.fromXhr(mockXhr);
+      let response = fromXhr(mockXhr);
       expect(response.body).to.equal('foobar');
     });
 
     describe('parses headers', function() {
-      var headers, parsedHeaders;
+      let headers, parsedHeaders;
 
       beforeEach(function() {
         headers = [
@@ -66,73 +60,114 @@ describe('HttpResponse', function() {
       it('windows', function() {
         mockXhr.getAllResponseHeaders = sinon.stub().returns(headers.join('\r\n'));
 
-        var response = HttpResponse.fromXhr(mockXhr);
-        expect(response.headers).to.eql(parsedHeaders);
+        let response = fromXhr(mockXhr);
+        expect(object(response.headers)).to.eql(parsedHeaders);
       });
 
       it('unix', function() {
         mockXhr.getAllResponseHeaders = sinon.stub().returns(headers.join('\n'));
 
-        var response = HttpResponse.fromXhr(mockXhr);
-        expect(response.headers).to.eql(parsedHeaders);
+        let response = fromXhr(mockXhr);
+        expect(object(response.headers)).to.eql(parsedHeaders);
       });
 
       it('handles response with no headers', function() {
         mockXhr.getAllResponseHeaders = sinon.stub().returns('');
 
-        var response = HttpResponse.fromXhr(mockXhr);
+        let response = fromXhr(mockXhr);
         expect(response.headers).to.eql({});
       });
-    });
-  });
-});
 
-describe('HttpClient', function() {
-  var FakeXhr, requests, httpClient;
-
-  before(function() {
-    FakeXhr = sinon.useFakeXMLHttpRequest();
-    global.XMLHttpRequest = FakeXhr;
-
-    requests = [];
-    FakeXhr.onCreate = function(xhr) {
-      requests.push(xhr);
-    };
-  });
-
-  after(function() {
-    FakeXhr.restore();
-    global.XMLHttpRequest = undefined;
-  });
-
-  beforeEach(function() {
-    requests.length = 0;
-
-    httpClient = new HttpClient('http://webdriver.local');
-  });
-
-  describe('constructor', function() {
-    it('throws error if serverUrl is invalid', function() {
-      expect(function() {
-        new HttpClient('invalid.url');
-      }).to.throw(/invalid server url/i);
+      function object(map) {
+        let object = {};
+        for (let entry of map) {
+          object[entry[0]] = entry[1];
+        }
+        return object;
+      }
     });
   });
 
-  describe('#send()', function() {
+  describe('HttpClient', function() {
+    const serverUrl = 'http://webdriver.local';
 
-    it('returns promise resolving the response', function(done) {
-      httpClient.send(new HttpRequest())
-      .then(function(res) {
-        expect(res).to.be.instanceOf(HttpResponse);
-        expect(res.body).to.equal('OK');
+    let FakeXhr, xhrq, httpClient, request;
 
-        done();
+    before(function() {
+      FakeXhr = sinon.useFakeXMLHttpRequest();
+      global.XMLHttpRequest = FakeXhr;
+
+      xhrq = [];
+      FakeXhr.onCreate = function(xhr) {
+        xhrq.push(xhr);
+      };
+    });
+
+    after(function() {
+      FakeXhr.restore();
+    });
+
+    beforeEach(function() {
+      xhrq.length = 0;
+
+      httpClient = new HttpClient(serverUrl);
+      request = new Request('GET', '/path');
+    });
+
+    describe('constructor', function() {
+      it('throws error if serverUrl is invalid', function() {
+        expect(function() {
+          new HttpClient('invalid.url');
+        }).to.throw(/invalid server url/i);
+      });
+    });
+
+    describe('#send()', function() {
+
+      it('trims request path leading "/" if needed', function() {
+        new HttpClient(`${serverUrl}/`).send(request);
+        expect(xhrq[0].url).to.equal(`${serverUrl}${request.path}`);
       });
 
-      requests[0].respond(200, {}, 'OK');
-    });
+      it('sets headers from `Request#headers`', function() {
+        request.headers.set('X-Header', 'Value');
+        new HttpClient(`${serverUrl}/`).send(request);
 
-    it('rejects with an error if somethings wrong');
+        request.headers.forEach(function(value, name) {
+          expect(xhrq[0].requestHeaders[name] === value);
+        });
+      });
+
+      ['POST', 'PUT'].forEach(function(method) {
+        it(`sets "Content-Type" header to json for ${method}`, function() {
+          httpClient.send(new Request(method, '/path'));
+          expect(xhrq[0].requestHeaders['Content-Type']).to.match(/json/i);
+        });
+      });
+
+      it('returns promise resolving the response', function(done) {
+        httpClient.send(request)
+        .then(function(res) {
+          expect(res).to.be.instanceOf(Response);
+          expect(res.body).to.equal('OK');
+
+          done();
+        });
+
+        xhrq[0].respond(200, {}, 'OK');
+      });
+
+      it('returns promise rejecting with an error if unable to send', function(done) {
+        httpClient.send(request)
+        .catch(function(e) {
+          expect(e.message).to.match(/^unable to send request/i);
+
+          done();
+        });
+
+        xhrq[0].error();
+      });
+    });
   });
+
 });

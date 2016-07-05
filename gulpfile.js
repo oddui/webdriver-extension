@@ -13,7 +13,7 @@ const zip = require('gulp-zip');
 
 gulp.task('lint', () => {
   return gulp.src([
-    'app/scripts/**/*.js',
+    'app/src/**/*.js',
     'app/test/**/*.js',
     'gulpfile.js'
   ])
@@ -46,7 +46,7 @@ gulp.task('watch', ['lint', 'webpack'], () => {
   ]).on('change', livereload.reload);
 
   gulp.watch([
-    'app/scripts/**/*.js',
+    'app/src/**/*.js',
     'app/test/**/*.js'
   ], ['lint', 'webpack']);
 });
@@ -55,9 +55,9 @@ gulp.task('manifest', () => {
   let manifestOpts = {
     buildnumber: false,
     background: {
-      target: 'scripts/background.js',
+      target: 'src/background.js',
       exclude: [
-        'scripts/chromereload.js'
+        'src/chromereload.js'
       ]
     }
   };

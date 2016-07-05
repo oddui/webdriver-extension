@@ -2,7 +2,7 @@
 
 const path = require('path');
 const Path = {
-  lib: path.join(__dirname, 'app/scripts/lib'),
+  lib: path.join(__dirname, 'app/src/lib'),
   test: path.join(__dirname, 'app/test'),
   output: path.join(__dirname, 'app/bundles')
 };

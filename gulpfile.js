@@ -8,25 +8,8 @@ const gutil = require('gulp-util');
 const livereload = require('gulp-livereload');
 const manifest = require('gulp-chrome-manifest');
 const runSequence = require('run-sequence');
-const size = require('gulp-size');
 const webpack = require('webpack');
 const zip = require('gulp-zip');
-
-gulp.task('extras', () => {
-  return gulp.src([
-    'app/*.*',
-    'app/_locales/**',
-    'app/images/**',
-    'app/scripts/lib/bundle.js',
-    'app/test/*.*',
-    '!app/*.json'
-  ], {
-    base: 'app',
-    dot: true
-  })
-  .pipe(debug({title: 'copying to dist:'}))
-  .pipe(gulp.dest('dist'));
-});
 
 gulp.task('lint', () => {
   return gulp.src([
@@ -40,23 +23,8 @@ gulp.task('lint', () => {
   .pipe(eslint.format());
 });
 
-gulp.task('manifest', () => {
-  let manifestOpts = {
-    buildnumber: false,
-    background: {
-      target: 'scripts/background.js',
-      exclude: [
-        'scripts/chromereload.js'
-      ]
-    }
-  };
-  return gulp.src('app/manifest.json')
-  .pipe(manifest(manifestOpts))
-  .pipe(gulp.dest('dist'));
-});
-
 gulp.task('webpack', (cb) => {
-  webpack(require('./webpack.config.js'), function(err, stats) {
+  webpack(require('./webpack.config.js'), (err, stats) => {
     if(err) {
       throw err;
     }
@@ -86,29 +54,54 @@ gulp.task('watch', ['lint', 'webpack'], () => {
   ], ['lint', 'webpack']);
 });
 
-gulp.task('package', function () {
-  let manifest = require('./dist/manifest.json');
-  return gulp.src('dist/**')
-  .pipe(zip('webdriver-extension-' + manifest.version + '.zip'))
-  .pipe(gulp.dest('package'));
+gulp.task('manifest', () => {
+  let manifestOpts = {
+    buildnumber: false,
+    background: {
+      target: 'scripts/background.js',
+      exclude: [
+        'scripts/chromereload.js'
+      ]
+    }
+  };
+  return gulp.src('app/manifest.json')
+  .pipe(manifest(manifestOpts))
+  .pipe(gulp.dest('dist'));
 });
 
-gulp.task('size', () => {
-  return gulp.src('dist/**/*').pipe(size({title: 'build', gzip: true}));
+gulp.task('extras', () => {
+  return gulp.src([
+    'app/*.*',
+    'app/_locales/**',
+    'app/images/**',
+    'app/scripts/lib/bundle.js',
+    'app/test/*.*',
+    '!app/*.json'
+  ], {
+    base: 'app',
+    dot: true
+  })
+  .pipe(debug({title: 'copying to dist:'}))
+  .pipe(gulp.dest('dist'));
 });
 
 gulp.task('build', (cb) => {
   runSequence(
-    'lint',
-    'webpack',
-    ['manifest', 'extras'],
-    'size', cb);
+    'lint', 'webpack',
+    ['manifest', 'extras'], cb);
 });
 
 gulp.task('clean', () => {
-  return del(['.tmp', 'dist', 'app/**/bundle.js']).then(paths =>
+  return del(['dist', 'app/**/bundle.js']).then(paths =>
     paths.forEach(path => gutil.log('deleted:', gutil.colors.blue(path)))
   );
+});
+
+gulp.task('package', () => {
+  let manifest = require('./dist/manifest.json');
+  return gulp.src('dist/**')
+  .pipe(zip('webdriver-extension-' + manifest.version + '.zip'))
+  .pipe(gulp.dest('package'));
 });
 
 gulp.task('default', ['clean'], cb => {

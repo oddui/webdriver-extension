@@ -1,11 +1,7 @@
-node_modules
-temp
-.tmp
-dist
-.sass-cache
-package
-coverage
-docs/gen
+/coverage
+/dist
+/docs/gen
+/node_modules
+/package
 
-bundle.js
-bundle.js.map
+bundles

@@ -15,8 +15,6 @@ gulp.task('lint', () => {
   return gulp.src([
     'app/scripts/**/*.js',
     'app/test/**/*.js',
-    '!app/**/bundle.js',
-
     'gulpfile.js'
   ])
   .pipe(eslint())
@@ -42,15 +40,14 @@ gulp.task('watch', ['lint', 'webpack'], () => {
   livereload.listen();
 
   gulp.watch([
-    'app/test/bundle.js',
+    'app/bundles/test.js',
     'app/images/**/*',
     'app/_locales/**/*.json'
   ]).on('change', livereload.reload);
 
   gulp.watch([
     'app/scripts/**/*.js',
-    'app/test/**/*.js',
-    '!app/**/bundle.js'
+    'app/test/**/*.js'
   ], ['lint', 'webpack']);
 });
 
@@ -71,11 +68,11 @@ gulp.task('manifest', () => {
 
 gulp.task('extras', () => {
   return gulp.src([
-    'app/*.*',
+    'app/*',
     'app/_locales/**',
     'app/images/**',
-    'app/scripts/lib/bundle.js',
-    'app/test/*.*',
+    'app/bundles/*',
+    'app/test/*',
     '!app/*.json'
   ], {
     base: 'app',
@@ -92,7 +89,7 @@ gulp.task('build', (cb) => {
 });
 
 gulp.task('clean', () => {
-  return del(['dist', 'app/**/bundle.js']).then(paths =>
+  return del(['dist', 'app/bundles']).then(paths =>
     paths.forEach(path => gutil.log('deleted:', gutil.colors.blue(path)))
   );
 });

@@ -3,4 +3,4 @@ const semver = require('semver'),
   webdriver = require('selenium-webdriver/package.json');
 
 module.exports = semver.parse(self.version);
-module.exports['webdriver-version'] = webdriver.version;
+module.exports['selenium-webdriver'] = webdriver.version;

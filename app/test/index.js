@@ -1,5 +1,6 @@
-require('!style!css!mocha/mocha.css');
-require('mocha/mocha.js');
+'use strict';
+
+const mocha = require('mocha');
 
 mocha.setup('bdd');
 

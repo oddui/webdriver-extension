@@ -8,55 +8,21 @@ const gutil = require('gulp-util');
 const livereload = require('gulp-livereload');
 const manifest = require('gulp-chrome-manifest');
 const runSequence = require('run-sequence');
-const size = require('gulp-size');
 const webpack = require('webpack');
 const zip = require('gulp-zip');
 
-gulp.task('extras', () => {
-  return gulp.src([
-    'app/*.*',
-    'app/_locales/**',
-    'app/images/**',
-    'app/scripts/lib/bundle.js',
-    'app/test/*.*',
-    '!app/*.json'
-  ], {
-    base: 'app',
-    dot: true
-  })
-  .pipe(debug({title: 'copying to dist:'}))
-  .pipe(gulp.dest('dist'));
-});
-
 gulp.task('lint', () => {
   return gulp.src([
-    'app/scripts/**/*.js',
+    'app/src/**/*.js',
     'app/test/**/*.js',
-    '!app/**/bundle.js',
-
     'gulpfile.js'
   ])
   .pipe(eslint())
   .pipe(eslint.format());
 });
 
-gulp.task('manifest', () => {
-  let manifestOpts = {
-    buildnumber: false,
-    background: {
-      target: 'scripts/background.js',
-      exclude: [
-        'scripts/chromereload.js'
-      ]
-    }
-  };
-  return gulp.src('app/manifest.json')
-  .pipe(manifest(manifestOpts))
-  .pipe(gulp.dest('dist'));
-});
-
 gulp.task('webpack', (cb) => {
-  webpack(require('./webpack.config.js'), function(err, stats) {
+  webpack(require('./webpack.config.js'), (err, stats) => {
     if(err) {
       throw err;
     }
@@ -74,41 +40,65 @@ gulp.task('watch', ['lint', 'webpack'], () => {
   livereload.listen();
 
   gulp.watch([
-    'app/test/bundle.js',
+    'app/bundles/test.js',
     'app/images/**/*',
     'app/_locales/**/*.json'
   ]).on('change', livereload.reload);
 
   gulp.watch([
-    'app/scripts/**/*.js',
-    'app/test/**/*.js',
-    '!app/**/bundle.js'
+    'app/src/**/*.js',
+    'app/test/**/*.js'
   ], ['lint', 'webpack']);
 });
 
-gulp.task('package', function () {
-  let manifest = require('./dist/manifest.json');
-  return gulp.src('dist/**')
-  .pipe(zip('webdriver-extension-' + manifest.version + '.zip'))
-  .pipe(gulp.dest('package'));
+gulp.task('manifest', () => {
+  let manifestOpts = {
+    buildnumber: false,
+    background: {
+      target: 'src/background.js',
+      exclude: [
+        'src/chromereload.js'
+      ]
+    }
+  };
+  return gulp.src('app/manifest.json')
+  .pipe(manifest(manifestOpts))
+  .pipe(gulp.dest('dist'));
 });
 
-gulp.task('size', () => {
-  return gulp.src('dist/**/*').pipe(size({title: 'build', gzip: true}));
+gulp.task('extras', () => {
+  return gulp.src([
+    'app/*',
+    'app/_locales/**',
+    'app/images/**',
+    'app/bundles/*',
+    'app/test/*',
+    '!app/*.json'
+  ], {
+    base: 'app',
+    dot: true
+  })
+  .pipe(debug({title: 'copying to dist:'}))
+  .pipe(gulp.dest('dist'));
 });
 
 gulp.task('build', (cb) => {
   runSequence(
-    'lint',
-    'webpack',
-    ['manifest', 'extras'],
-    'size', cb);
+    'lint', 'webpack',
+    ['manifest', 'extras'], cb);
 });
 
 gulp.task('clean', () => {
-  return del(['.tmp', 'dist', 'app/**/bundle.js']).then(paths =>
+  return del(['dist', 'app/bundles']).then(paths =>
     paths.forEach(path => gutil.log('deleted:', gutil.colors.blue(path)))
   );
+});
+
+gulp.task('package', () => {
+  let manifest = require('./dist/manifest.json');
+  return gulp.src('dist/**')
+  .pipe(zip('webdriver-extension-' + manifest.version + '.zip'))
+  .pipe(gulp.dest('package'));
 });
 
 gulp.task('default', ['clean'], cb => {

@@ -3,11 +3,16 @@
 <head>
   <meta charset="utf-8">
   <title>Mocha Spec Runner</title>
+  <link rel="stylesheet" href="../node_modules/mocha/mocha.css">
 </head>
 <body>
   <div id="mocha"></div>
 
+  <!-- dependencies -->
+  <script src="../node_modules/mocha/mocha.js"></script>
+  <script src="../node_modules/sinon/pkg/sinon.js"></script>
+
   <!-- webpack test bundle -->
-  <script src="bundle.js"></script>
+  <script src="../bundles/test.js"></script>
 </body>
 </html>

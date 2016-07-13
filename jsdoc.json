@@ -6,7 +6,7 @@
     "recurse": true
   },
   "source": {
-    "include": ["README.md", "app/scripts"]
+    "include": ["README.md", "app/src"]
   },
   "templates": {
     "default": {

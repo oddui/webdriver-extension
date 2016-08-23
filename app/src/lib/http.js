@@ -87,11 +87,12 @@ HttpClient.prototype.send = function(request) {
       xhr.setRequestHeader(name, value);
     });
 
-    if (request.method == 'POST' || request.method == 'PUT') {
+    if (['POST', 'PUT'].indexOf(request.method) > -1) {
       xhr.setRequestHeader('Content-Type', 'application/json; charset=UTF-8');
+      xhr.send(JSON.stringify(request.data));
+    } else {
+      xhr.send();
     }
-
-    xhr.send(JSON.stringify(request.data));
   });
 };
 

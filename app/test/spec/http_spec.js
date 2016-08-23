@@ -140,8 +140,16 @@ describe('http', function() {
 
       ['POST', 'PUT'].forEach(function(method) {
         it(`sets "Content-Type" header to json for ${method}`, function() {
-          httpClient.send(new Request(method, '/path'));
+          httpClient.send(new Request(method, '/path', {}));
           expect(xhrq[0].requestHeaders['Content-Type']).to.match(/json/i);
+          expect(xhrq[0].requestBody).to.equal(JSON.stringify({}));
+        });
+      });
+
+      ['GET', 'PATCH', 'DELETE'].forEach(function(method) {
+        it(`does not send request body for ${method}`, function() {
+          httpClient.send(new Request(method, '/path', {}));
+          expect(xhrq[0].requestBody).to.oneOf([null, undefined]);
         });
       });
 

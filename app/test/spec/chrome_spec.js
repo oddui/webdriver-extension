@@ -59,7 +59,8 @@ describe('chrome', function() {
 
       it('rebuilds options from incomplete wire representation', function() {
         const caps = Capabilities.chrome().set('chromeOptions', {
-          logPath: 'logFilePath'
+          logPath: 'logFilePath',
+          excludeSwitches: ['allow-running-insecure-content']
         });
 
         let options = Options.fromCapabilities(caps);
@@ -68,7 +69,7 @@ describe('chrome', function() {
         expect(options.options_.args).to.be.undefined;
         expect(options.options_.binary).to.be.undefined;
         expect(options.options_.detach).to.be.undefined;
-        expect(options.options_.excludeSwitches).to.be.undefined;
+        expect(options.options_.excludeSwitches).to.contain('allow-running-insecure-content');
         expect(options.options_.localState).to.be.undefined;
         expect(options.options_.logPath).to.equal('logFilePath');
         expect(options.options_.minidumpPath).to.be.undefined;

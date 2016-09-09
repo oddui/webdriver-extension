@@ -8,10 +8,9 @@
 #### Setup
 
 ```sh
-npm install -g gulp
 npm install
 
-gulp watch
+./node_modules/.bin/gulp watch
 ```
 
 Load the app folder as unpacked extension. `gulp watch` watches for

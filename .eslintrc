@@ -31,7 +31,6 @@
   },
   "globals": {
     "chrome": true,
-    "pchrome": true,
     "console": true
   }
 }

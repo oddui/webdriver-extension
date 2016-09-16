@@ -8,8 +8,8 @@
   "scripts": {
     "docs": "jsdoc -c ./jsdoc.json",
     "test": "npm run unit",
-    "unit": "mocha app/test/spec",
-    "coverage": "istanbul cover _mocha -- app/test/spec",
+    "unit": "mocha --recursive app/test/spec",
+    "coverage": "istanbul cover _mocha -- --recursive app/test/spec",
     "coveralls": "npm run coverage && cat ./coverage/lcov.info | coveralls"
   },
   "devDependencies": {

@@ -8,29 +8,39 @@ const webdriver = require('../src/lib/index'),
 
 if (process.browser) {
   // only run in browser
+
   run();
+  run(true);
 }
 
-function run() {
+/**
+ * Run e2e tests
+ *
+ * @param {boolean} remote Whether to use http webdriver server.
+ */
+function run(remote) {
+  webdriver.logging.installConsoleHandler();
+
+  ['webdriver.extension', 'webdriver.http']
+    .forEach(function(name) {
+      webdriver.logging.getLogger(name)
+        .setLevel(webdriver.logging.Level.ALL);
+    });
 
   // chrome specific options/capabilities
   let chromeOptions = new chrome.Options()
     .setMobileEmulation({deviceName: 'Google Nexus 5'});
 
-
-  let driver = new Builder()
-
+  let builder = new Builder()
     .forBrowser('chrome')
-    .setChromeOptions(chromeOptions)
+    .setChromeOptions(chromeOptions);
 
-    //.forBrowser('firefox')
-    //.forBrowser('safari')
+  if (remote) {
+    // manually started webdriver server
+    builder.usingServer('http://127.0.0.1:9515');
+  }
 
-    // manually started webdriver servers
-    .usingServer('http://127.0.0.1:4444/wd/hub')
-    .usingServer('http://127.0.0.1:9515')
-
-    .build();
+  let driver = builder.build();
 
 
   let message = [];

@@ -486,9 +486,9 @@ class Driver extends webdriver.WebDriver {
    *     or {@code null} to use the currently active flow.
    */
   constructor(opt_config, executor, opt_flow) {
-    if (executor instanceof http.Executor) {
+    try {
       configureExecutor(executor);
-    } else {
+    } catch(e) {
       throw Error('Invalid executor.');
     }
 

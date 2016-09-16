@@ -3,6 +3,7 @@
 const capabilities = require('selenium-webdriver/lib/capabilities');
 const webdriver = require('selenium-webdriver/lib/webdriver');
 const http = require('./http');
+const extension = require('./extension');
 const chrome = require('./chrome');
 
 const Browser = capabilities.Browser;
@@ -362,9 +363,9 @@ class Builder {
       return WebDriver.createSession(executor, capabilities, this.flow_);
     }
 
-    // TODO: Use extension executor
     if (browser === Browser.CHROME) {
-      throw new Error('Extension executor not implemented.');
+      let executor = new extension.Executor();
+      return new chrome.Driver(capabilities, executor, this.flow_);
     } else {
       throw new Error(
         `Do not know how to build driver: ${browser}

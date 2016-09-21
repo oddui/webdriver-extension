@@ -7,6 +7,25 @@ const error = require('selenium-webdriver/lib/error');
 const MAXIMUM_ACTIVE_SESSIONS = 1;
 
 
+const NEXUS5_EMULATION_METRICS = {
+  mobile: true,
+  width: 360,
+  height: 640,
+  deviceScaleFactor: 3,
+  fitWindow: false,
+  screenOrientation: {
+    angle: 0,
+    type: 'portraitPrimary'
+  }
+};
+
+
+const NEXUS5_USERAGENT =
+  'Mozilla/5.0 (Linux; Android 4.4.4; Nexus 5 Build/KTU84P) \
+   AppleWebKit/537.36 (KHTML, like Gecko) \
+   Chrome/38.0.2125.114 Mobile Safari/537.36';
+
+
 /**
  * Enum of page load strategy
  */
@@ -38,7 +57,23 @@ function findSession(id) {
 }
 
 
-function clearSessions() {
+function addSession(session) {
+  if (session instanceof Session) {
+    activeSessions.push(session);
+  }
+}
+
+
+function removeSession(id) {
+  let session = findSession(id);
+
+  if (session) {
+    activeSessions.splice(activeSessions.indexOf(session), 1);
+  }
+}
+
+
+function clearActiveSessions() {
   activeSessions.length = 0;
 }
 
@@ -153,24 +188,53 @@ function uuid() {
 }
 
 
-/**
- * [New Session command](https://www.w3.org/TR/webdriver/#new-session)
- *
- * @param {!Object<*>} parameters The command parameters.
- */
-function newSession(parameters) {
+function processCapabilities(caps) {
+  let desiredCaps = caps.desiredCapabilities || {},
+    requiredCaps = caps.requiredCapabilities || {},
+    unprocessedCaps = Object.assign({}, desiredCaps, requiredCaps),
+    serverCaps = {
+      browserName: 'chrome',
+      browserVersion: '',
+      platformName: '',
+      platformVersion: '',
+      acceptSslCerts: false
+    },
+    unmetCaps = [];
 
-  if (activeSessions.length >= MAXIMUM_ACTIVE_SESSIONS) {
-    return Promise.reject(
-      new error.SessionNotCreatedError(
-        `Maximum(${MAXIMUM_ACTIVE_SESSIONS}) active sessions reached.`
-      )
-    );
+  for (let cap in unprocessedCaps) {
+    let value = unprocessedCaps[cap];
+
+    if (requiredCaps[cap] !== undefined &&
+      serverCaps[cap] !== undefined &&
+      value !== serverCaps[cap]) {
+
+      unmetCaps.push(
+        `Required capability ${cap} ${value} does not match server capability ${serverCaps[cap]}`
+      );
+      continue;
+    }
+
+    if (['proxy', 'pageLoadStrategy', 'chromeOptions'].indexOf(cap) > -1) {
+      serverCaps[cap] = unprocessedCaps[cap];
+    } else if (requiredCaps[cap] !== undefined) {
+      unmetCaps.push(
+        `Unknown required capability ${cap} ${value}`
+      );
+    }
   }
 
+  if (unmetCaps.length) {
+    throw(new error.SessionNotCreatedError(unmetCaps.join(';')));
+  }
+
+  return serverCaps;
+}
+
+
+function createWindow() {
   return new Promise((resolve, reject) => {
     chrome.windows.create({
-      url: 'data:,'
+      url: 'about:blank'
     }, function(window) {
       if (chrome.runtime.lastError) {
         return reject(
@@ -178,13 +242,7 @@ function newSession(parameters) {
         );
       } else {
         if (window) {
-          let session = new Session();
-          activeSessions.push(session);
-
-          resolve({
-            sessionId: session.getId(),
-            capabilities: parameters
-          });
+          resolve(window);
         } else {
           reject(new error.SessionNotCreatedError('Failed to create window.'));
         }
@@ -194,12 +252,90 @@ function newSession(parameters) {
 }
 
 
+/**
+ * [New Session command](https://www.w3.org/TR/webdriver/#new-session)
+ *
+ * @param {!Object<*>} parameters The command parameters.
+ * @param {!Debugger} dbg
+ */
+function newSession(parameters, dbg) {
+
+  if (activeSessions.length >= MAXIMUM_ACTIVE_SESSIONS) {
+    return Promise.reject(
+      new error.SessionNotCreatedError(
+        `Maximum(${MAXIMUM_ACTIVE_SESSIONS}) active sessions reached.`
+      )
+    );
+  }
+
+  if (typeof parameters !== 'object') {
+    return Promise.reject(
+      new error.SessionNotCreatedError('Cannot find desiredCapabilities.')
+    );
+  }
+
+  let capsResult;
+
+  try {
+    if (parameters.capabilities && parameters.capabilities.desiredCapabilities) {
+      capsResult = processCapabilities(parameters.capabilities);
+    } else if (parameters.desiredCapabilities) {
+      capsResult = processCapabilities({ desiredCapabilities: parameters.desiredCapabilities });
+    } else {
+      throw(new error.SessionNotCreatedError('Cannot find desiredCapabilities.'));
+    }
+  } catch(e) {
+    return Promise.reject(e);
+  }
+
+  let session = new Session();
+  activeSessions.push(session);
+
+  if (capsResult.pageLoadStrategy) {
+    session.setPageLoadStrategy(capsResult.pageLoadStrategy);
+  }
+
+  return createWindow()
+    .then(function(window) {
+      let chromeOptions = capsResult.chromeOptions || {};
+
+      if (chromeOptions.mobileEmulation) {
+        return dbg.connect(window.tabs[0])
+          .then(function() {
+            return Promise.all([
+              dbg.sendCommand('Emulation.setDeviceMetricsOverride', NEXUS5_EMULATION_METRICS),
+              // Network.enable must be called for UA overriding to work
+              dbg.sendCommand('Network.enable'),
+              dbg.sendCommand('Network.setUserAgentOverride', { userAgent: NEXUS5_USERAGENT }),
+              dbg.sendCommand('Emulation.setTouchEmulationEnabled', {
+                enabled: true,
+                configuration: 'mobile'
+              })
+            ]);
+          });
+      }
+    })
+    .then(function() {
+      return {
+        sessionId: session.getId(),
+        capabilities: capsResult
+      };
+    })
+    .catch(function(e) {
+      removeSession(session.getId());
+      throw(e);
+    });
+}
+
+
 module.exports = {
   MAXIMUM_ACTIVE_SESSIONS: MAXIMUM_ACTIVE_SESSIONS,
   PageLoadStrategy: PageLoadStrategy,
   Session: Session,
   findSession: findSession,
-  clearSessions: clearSessions,
+  addSession: addSession,
+  removeSession: removeSession,
+  clearActiveSessions: clearActiveSessions,
 
   // session commands
   newSession: newSession

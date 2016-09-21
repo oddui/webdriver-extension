@@ -5,12 +5,35 @@ const expect = require('chai').expect,
   fakeChromeApi = require('./fake_chrome_api'),
   SessionCommands = require('../../../src/lib/extension/session_commands'),
   Session = SessionCommands.Session,
-  clearSessions = SessionCommands.clearSessions,
   findSession = SessionCommands.findSession,
+  clearActiveSessions = SessionCommands.clearActiveSessions,
   newSession = SessionCommands.newSession;
 
 
 describe('extension', function() {
+
+  describe('active sessions', function() {
+    const removeSession = SessionCommands.removeSession,
+      addSession = SessionCommands.addSession;
+
+    let session;
+
+    beforeEach(function() {
+      session = new Session();
+      addSession(session);
+    });
+
+    afterEach(clearActiveSessions);
+
+    it('findSession', function() {
+      expect(findSession(session.getId())).to.equal(session);
+    });
+
+    it('removeSession', function() {
+      removeSession(session.getId());
+      expect(findSession(session.getId())).to.be.null;
+    });
+  });
 
   describe('Session', function() {
     let session;
@@ -117,26 +140,73 @@ describe('extension', function() {
     before(fakeChromeApi.use);
     after(fakeChromeApi.restore);
 
-    afterEach(clearSessions);
+    afterEach(clearActiveSessions);
 
-    it('adds new session in active sessions', function() {
-      return newSession()
-        .then(function(result) {
-          expect(findSession(result.sessionId)).not.to.be.null;
-        });
-    });
-
-    it('throws session not created error if reached maximum active sessions', function() {
+    it('throws session not created if reached maximum active sessions', function() {
       let promises = [];
 
       for (let i = 0; i < SessionCommands.MAXIMUM_ACTIVE_SESSIONS; i++) {
-        promises.push(newSession());
+        promises.push(newSession({ desiredCapabilities: {} }));
       }
 
-      return newSession()
-        .catch(function(e) {
-          expect(e).to.be.instanceof(error.SessionNotCreatedError);
+      return Promise.all(promises)
+        .then(function() {
+          return newSession()
+            .catch(function(e) {
+              expect(e).to.be.instanceof(error.SessionNotCreatedError);
+            });
         });
+    });
+
+    it('adds new session in active sessions', function() {
+      return newSession({ desiredCapabilities: {} })
+        .then(function(result) {
+          expect(result).to.have.property('sessionId');
+          expect(result).to.have.property('capabilities');
+
+          expect(findSession(result.sessionId).sessionId).to.equal(result.sessionid);
+        });
+    });
+
+    describe('capabilities', function() {
+
+      it('throws session not created if desiredCapabilities not passed in', function() {
+        return newSession()
+          .catch(function(e) {
+            expect(e).to.be.instanceof(error.SessionNotCreatedError);
+          });
+      });
+
+      it('throws session not created if required capabilities cannot be met', function() {
+        return newSession({
+          capabilities: {
+            requiredCapabilities: {
+              browserName: 'safari'
+            },
+            desiredCapabilities: {}
+          }
+        })
+          .catch(function(e) {
+            expect(e).to.be.instanceof(error.SessionNotCreatedError);
+            expect(e.message).to.be.match(/does not match server capability/i);
+          });
+      });
+
+      it('throws session not created if required capability is unknown', function() {
+        return newSession({
+          capabilities: {
+            requiredCapabilities: {
+              unknown: true
+            },
+            desiredCapabilities: {}
+          }
+        })
+          .catch(function(e) {
+            expect(e).to.be.instanceof(error.SessionNotCreatedError);
+            expect(e.message).to.be.match(/unknown required capability/i);
+          });
+      });
+
     });
   });
 

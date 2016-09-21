@@ -131,7 +131,7 @@ class Debugger extends EventEmitter {
 
       chrome.debugger.sendCommand({tabId: this.tabId_}, command, params, result => {
         if (chrome.runtime.lastError) {
-          this.log_.severe(`method <= browser ERR, ${command} ${JSON.stringify(result)}`);
+          this.log_.severe(`method <= browser ERR, ${command} ${JSON.stringify(chrome.runtime.lastError)}`);
           return reject(chrome.runtime.lastError);
         }
 

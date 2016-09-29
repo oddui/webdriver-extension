@@ -14,7 +14,7 @@ const COMMAND_MAP = new Map([
   [cmd.Name.NEW_SESSION, SessionCommands.newSession],
   [cmd.Name.GET_SESSIONS, noop],
   [cmd.Name.DESCRIBE_SESSION, noop],
-  [cmd.Name.QUIT, noop],
+  [cmd.Name.QUIT, SessionCommands.deleteSession],
   [cmd.Name.CLOSE, noop],
   [cmd.Name.GET_CURRENT_WINDOW_HANDLE, noop],
   [cmd.Name.GET_WINDOW_HANDLES, noop],

@@ -252,6 +252,21 @@ function createWindow() {
 }
 
 
+function removeWindow(windowId) {
+  return new Promise((resolve, reject) => {
+    chrome.windows.remove(windowId, function() {
+      if (chrome.runtime.lastError) {
+        return reject(
+          new error.WebDriverError(chrome.runtime.lastError.message)
+        );
+      } else {
+        resolve();
+      }
+    });
+  });
+}
+
+
 /**
  * [New Session command](https://www.w3.org/TR/webdriver/#new-session)
  *
@@ -328,6 +343,21 @@ function newSession(parameters, dbg) {
 }
 
 
+/**
+ * [Delete Session command](https://www.w3.org/TR/webdriver/#delete-session)
+ *
+ * @param {!Object<*>} parameters The command parameters.
+ */
+function deleteSession(parameters) {
+  console.info(parameters);
+  // TODO: close session windows
+
+  removeSession(parameters.sessionId);
+
+  return Promise.resolve();
+}
+
+
 module.exports = {
   MAXIMUM_ACTIVE_SESSIONS: MAXIMUM_ACTIVE_SESSIONS,
   PageLoadStrategy: PageLoadStrategy,
@@ -338,5 +368,6 @@ module.exports = {
   clearActiveSessions: clearActiveSessions,
 
   // session commands
-  newSession: newSession
+  newSession: newSession,
+  deleteSession: deleteSession
 };

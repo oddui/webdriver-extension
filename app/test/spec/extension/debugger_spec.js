@@ -22,7 +22,7 @@ describe('extension', function() {
 
     describe('connect', function() {
       beforeEach(function() {
-        return dbg.connect(tab);
+        return dbg.connect(tab.id);
       });
 
       afterEach(function() {
@@ -30,7 +30,7 @@ describe('extension', function() {
       });
 
       it('returns resolved promise if connect again', function() {
-        return dbg.connect(tab)
+        return dbg.connect(tab.id)
           .then(function() {
             expect(dbg.tabId_).to.equal(tab.id);
           });
@@ -54,7 +54,7 @@ describe('extension', function() {
 
     describe('disconnect', function() {
       beforeEach(function() {
-        return dbg.connect(tab)
+        return dbg.connect(tab.id)
           .then(dbg.disconnect.bind(dbg));
       });
 
@@ -80,7 +80,7 @@ describe('extension', function() {
       });
 
       it('resolves with command result', function() {
-        return dbg.connect(tab)
+        return dbg.connect(tab.id)
           .then(function() {
             return dbg.sendCommand();
           })

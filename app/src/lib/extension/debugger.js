@@ -37,12 +37,12 @@ class Debugger extends EventEmitter {
     this.removeAllListeners();
   }
 
-  connect(tab) {
+  connect(tabId) {
     if (this.tabId_ !== null) {
       return Promise.resolve();
     }
 
-    const tabId = this.tabId_ = tab.id;
+    this.tabId_ = tabId;
     chrome.debugger.onEvent.addListener(this.onEvent_);
     chrome.debugger.onDetach.addListener(this.onUnexpectedDetach_);
 

@@ -20,6 +20,20 @@ describe('extension', function() {
     });
 
 
+    describe('isConnected', function() {
+      it('returns true if connected', function() {
+        return dbg.connect(tab.id)
+          .then(function() {
+            expect(dbg.isConnected()).to.be.true;
+          })
+          .then(dbg.disconnect.bind(dbg))
+          .then(function() {
+            expect(dbg.isConnected()).to.be.false;
+          });
+      });
+    });
+
+
     describe('connect', function() {
       beforeEach(function() {
         return dbg.connect(tab.id);
@@ -32,7 +46,7 @@ describe('extension', function() {
       it('returns resolved promise if connect again', function() {
         return dbg.connect(tab.id)
           .then(function() {
-            expect(dbg.tabId_).to.equal(tab.id);
+            expect(dbg.getTabId()).to.equal(tab.id);
           });
       });
 
@@ -47,7 +61,7 @@ describe('extension', function() {
 
       it('cleans debugger state on unexpected detach', function() {
         chrome.debugger.emitDetach('user_canceled');
-        expect(dbg.tabId_).to.be.null;
+        expect(dbg.getTabId()).to.be.null;
       });
     });
 
@@ -61,12 +75,12 @@ describe('extension', function() {
       it('returns resolved promise if disconnect again', function() {
         return dbg.disconnect()
           .then(function() {
-            expect(dbg.tabId_).to.be.null;
+            expect(dbg.getTabId()).to.be.null;
           });
       });
 
       it('cleans debugger state', function() {
-        expect(dbg.tabId_).to.be.null;
+        expect(dbg.getTabId()).to.be.null;
       });
     });
 

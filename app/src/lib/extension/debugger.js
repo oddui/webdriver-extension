@@ -37,6 +37,14 @@ class Debugger extends EventEmitter {
     this.removeAllListeners();
   }
 
+  getTabId() {
+    return this.tabId_;
+  }
+
+  isConnected() {
+    return this.tabId_ !== null;
+  }
+
   connect(tabId) {
     if (this.tabId_ !== null) {
       return Promise.resolve();

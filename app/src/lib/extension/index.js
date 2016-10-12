@@ -4,7 +4,6 @@ const cmd = require('selenium-webdriver/lib/command'),
   error = require('selenium-webdriver/lib/error'),
   logging = require('selenium-webdriver/lib/logging'),
   Session = require('selenium-webdriver/lib/session').Session,
-  Debugger = require('./debugger'),
   SessionCommands = require('./session_commands');
 
 
@@ -122,8 +121,6 @@ function responseToString(res) {
 class Executor {
   constructor() {
 
-    this.debugger_ = new Debugger();
-
     /** @private {Map<string, {method: string, path: string}>} */
     this.customCommands_ = new Map();
 
@@ -151,7 +148,7 @@ class Executor {
 
     this.log_.finer(() => '>>>\n' + commandToString(command));
 
-    return op(command.getParameters(), this.debugger_).then(res => {
+    return op(command.getParameters()).then(res => {
 
       this.log_.finer(() => '<<<\n' + responseToString(res));
 

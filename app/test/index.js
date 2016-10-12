@@ -16,6 +16,7 @@ require('./spec/extension/debugger_spec.js');
 require('./spec/extension/frame_tracker_spec.js');
 require('./spec/extension/index_spec.js');
 require('./spec/extension/session_commands_spec.js');
+require('./spec/extension/session_spec.js');
 require('./spec/extension/tab_spec.js');
 
 require('./e2e.js');

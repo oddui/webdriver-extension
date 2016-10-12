@@ -42,6 +42,10 @@ class Tab {
     this.navigationTracker_ = null;
   }
 
+  getId() {
+    return this.id_;
+  }
+
   connectIfNecessary() {
     if (this.debugger_.isConnected()) {
       return Promise.resolve();

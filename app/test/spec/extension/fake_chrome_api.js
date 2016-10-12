@@ -72,6 +72,35 @@ function debuggerApi() {
 }
 
 
+function tabsApi() {
+  let tabs = [{ id: 1 }];
+
+  function setTabs(tabsData) {
+    tabs = tabsData;
+  }
+
+  function query(queryInfo, cb) {
+    setTimeout(() => cb(tabs));
+  }
+
+  function remove(tabId, cb) {
+    for (let i = 0; i < tabs.length; i++) {
+      if (tabs[i].id === tabId) {
+        tabs.splice(i, 1);
+        break;
+      }
+    }
+    setTimeout(cb);
+  }
+
+  return {
+    setTabs: setTabs,
+    query: query,
+    remove: remove
+  };
+}
+
+
 function windowsApi() {
 
   function create(createData, cb) {
@@ -83,8 +112,13 @@ function windowsApi() {
     });
   }
 
+  function remove(windowId, cb) {
+    setTimeout(cb);
+  }
+
   return {
-    create: create
+    create: create,
+    remove: remove
   };
 }
 
@@ -98,6 +132,7 @@ exports.use = function() {
   global.chrome = {
     debugger: debuggerApi(),
     runtime: {},
+    tabs: tabsApi(),
     windows: windowsApi()
   };
 };

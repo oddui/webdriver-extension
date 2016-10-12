@@ -3,146 +3,21 @@
 const expect = require('chai').expect,
   error = require('selenium-webdriver/lib/error'),
   fakeChromeApi = require('./fake_chrome_api'),
+  sessions = require('../../../src/lib/extension/session'),
   SessionCommands = require('../../../src/lib/extension/session_commands'),
-  Session = SessionCommands.Session,
-  findSession = SessionCommands.findSession,
-  clearActiveSessions = SessionCommands.clearActiveSessions,
-  newSession = SessionCommands.newSession;
+  newSession = SessionCommands.newSession,
+  deleteSession = SessionCommands.deleteSession;
 
 
-describe('extension', function() {
+describe('extension', () => {
 
-  describe('active sessions', function() {
-    const removeSession = SessionCommands.removeSession,
-      addSession = SessionCommands.addSession;
+  before(fakeChromeApi.use);
+  after(fakeChromeApi.restore);
 
-    let session;
+  afterEach(sessions.clearActiveSessions);
 
-    beforeEach(function() {
-      session = new Session();
-      addSession(session);
-    });
-
-    afterEach(clearActiveSessions);
-
-    it('findSession', function() {
-      expect(findSession(session.getId())).to.equal(session);
-    });
-
-    it('removeSession', function() {
-      removeSession(session.getId());
-      expect(findSession(session.getId())).to.be.null;
-    });
-  });
-
-  describe('Session', function() {
-    let session;
-
-    beforeEach(function() {
-      session = new Session();
-    });
-
-    it('has an associated session id (UUID)', function() {
-      const pattern =
-        /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
-      expect(pattern.test(session.getId())).to.be.true;
-    });
-
-    describe('script timeout', function() {
-
-      it('is 30,000 milliseconds by default', function() {
-        expect(session.getScriptTimeout()).to.equal(30000);
-      });
-
-      it('can be set to other values', function() {
-        session.setScriptTimeout(10000);
-        expect(session.getScriptTimeout()).to.equal(10000);
-      });
-
-      it('throws error if not set to a number', function() {
-        expect(function() {
-          session.setScriptTimeout('10000');
-        }).to.throw(/must be a number/i);
-      });
-    });
-
-    describe('page load timeout', function() {
-
-      it('is 300,000 milliseconds by default', function() {
-        expect(session.getPageLoadTimeout()).to.equal(300000);
-      });
-
-      it('can be set to other values', function() {
-        session.setPageLoadTimeout(10000);
-        expect(session.getPageLoadTimeout()).to.equal(10000);
-      });
-
-      it('throws error if not set to a number', function() {
-        expect(function() {
-          session.setPageLoadTimeout('10000');
-        }).to.throw(/must be a number/i);
-      });
-    });
-
-    describe('implicit wait timeout', function() {
-
-      it('is 0 milliseconds by default', function() {
-        expect(session.getImplicitWaitTimeout()).to.equal(0);
-      });
-
-      it('can be set to other values', function() {
-        session.setImplicitWaitTimeout(10000);
-        expect(session.getImplicitWaitTimeout()).to.equal(10000);
-      });
-
-      it('throws error if not set to a number', function() {
-        expect(function() {
-          session.setImplicitWaitTimeout('10000');
-        }).to.throw(/must be a number/i);
-      });
-    });
-
-    describe('page load strategy', function() {
-      const PageLoadStrategy = SessionCommands.PageLoadStrategy;
-
-      it('is normal by default', function() {
-        expect(session.getPageLoadStrategy()).to.equal(PageLoadStrategy.NORMAL);
-      });
-
-      it('can be set to other strategies', function() {
-        session.setPageLoadStrategy(PageLoadStrategy.NONE);
-        expect(session.getPageLoadStrategy()).to.equal(PageLoadStrategy.NONE);
-      });
-
-      it('throws error if set to non-supported strategies', function() {
-        expect(function() {
-          session.setPageLoadStrategy('not-supported');
-        }).to.throw(/not supported/i);
-      });
-    });
-
-    describe('secure SSL state', function() {
-
-      it('is true by default', function() {
-        expect(session.getSecureSsl()).to.equal(true);
-      });
-
-      it('can be set through `acceptSslCerts`', function() {
-        session.acceptSslCerts(true);
-        expect(session.getSecureSsl()).to.equal(false);
-      });
-    });
-  });
-
-
-  describe('newSession', function() {
-
-    before(fakeChromeApi.use);
-    after(fakeChromeApi.restore);
-
-    afterEach(clearActiveSessions);
-
-    it('throws session not created if reached maximum active sessions', function() {
+  describe('newSession', () => {
+    it('throws session not created if reached maximum active sessions', () => {
       let promises = [];
 
       for (let i = 0; i < SessionCommands.MAXIMUM_ACTIVE_SESSIONS; i++) {
@@ -150,34 +25,29 @@ describe('extension', function() {
       }
 
       return Promise.all(promises)
-        .then(function() {
+        .then(() => {
           return newSession()
-            .catch(function(e) {
-              expect(e).to.be.instanceof(error.SessionNotCreatedError);
-            });
+            .catch(e => expect(e).to.be.instanceof(error.SessionNotCreatedError));
         });
     });
 
-    it('adds new session in active sessions', function() {
+    it('adds new session in active sessions', () => {
       return newSession({ desiredCapabilities: {} })
-        .then(function(result) {
+        .then(result => {
           expect(result).to.have.property('sessionId');
           expect(result).to.have.property('capabilities');
 
-          expect(findSession(result.sessionId).sessionId).to.equal(result.sessionid);
+          expect(sessions.findSession(result.sessionId).sessionId).to.equal(result.sessionid);
         });
     });
 
-    describe('capabilities', function() {
-
-      it('throws session not created if desiredCapabilities not passed in', function() {
+    describe('capabilities', () => {
+      it('throws session not created if desiredCapabilities not passed in', () => {
         return newSession()
-          .catch(function(e) {
-            expect(e).to.be.instanceof(error.SessionNotCreatedError);
-          });
+          .catch(e => expect(e).to.be.instanceof(error.SessionNotCreatedError));
       });
 
-      it('throws session not created if required capabilities cannot be met', function() {
+      it('throws session not created if required capabilities cannot be met', () => {
         return newSession({
           capabilities: {
             requiredCapabilities: {
@@ -186,13 +56,13 @@ describe('extension', function() {
             desiredCapabilities: {}
           }
         })
-          .catch(function(e) {
+          .catch(e => {
             expect(e).to.be.instanceof(error.SessionNotCreatedError);
             expect(e.message).to.be.match(/does not match server capability/i);
           });
       });
 
-      it('throws session not created if required capability is unknown', function() {
+      it('throws session not created if required capability is unknown', () => {
         return newSession({
           capabilities: {
             requiredCapabilities: {
@@ -201,12 +71,27 @@ describe('extension', function() {
             desiredCapabilities: {}
           }
         })
-          .catch(function(e) {
+          .catch(e => {
             expect(e).to.be.instanceof(error.SessionNotCreatedError);
             expect(e.message).to.be.match(/unknown required capability/i);
           });
       });
+    });
+  });
 
+
+  describe('deleteSession', () => {
+    it('throws no such session error if cannot find session with id', () => {
+      return deleteSession({ sessionId: -1 })
+        .catch(e => expect(e).to.be.instanceof(error.NoSuchSessionError));
+    });
+
+    it('removes session from active sessions', () => {
+      let session = new sessions.Session();
+      sessions.addSession(session);
+
+      return deleteSession({ sessionId: session.getId() })
+        .then(() => expect(sessions.findSession(session.getId())).to.be.null);
     });
   });
 

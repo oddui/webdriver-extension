@@ -1,29 +1,11 @@
 'use strict';
 
 
-const error = require('selenium-webdriver/lib/error');
+const error = require('selenium-webdriver/lib/error'),
+  Tab = require('./tab');
 
 
 const MAXIMUM_ACTIVE_SESSIONS = 1;
-
-
-const NEXUS5_EMULATION_METRICS = {
-  mobile: true,
-  width: 360,
-  height: 640,
-  deviceScaleFactor: 3,
-  fitWindow: false,
-  screenOrientation: {
-    angle: 0,
-    type: 'portraitPrimary'
-  }
-};
-
-
-const NEXUS5_USERAGENT =
-  'Mozilla/5.0 (Linux; Android 4.4.4; Nexus 5 Build/KTU84P) \
-   AppleWebKit/537.36 (KHTML, like Gecko) \
-   Chrome/38.0.2125.114 Mobile Safari/537.36';
 
 
 /**
@@ -91,6 +73,16 @@ class Session {
 
     this.pageLoadStrategy_ = PageLoadStrategy.NORMAL;
     this.secureSsl_ = true;
+
+    this.windowId_ = null;
+    this.tabs_ = [];
+    this.currentTabId_ = null;
+
+    /**
+     * List of frames for each frame to the current target frame from the
+     * top frame. If target frame is window.top, this list will be empty.
+     */
+    this.frames_ = [];
   }
 
   getId() {
@@ -175,6 +167,71 @@ class Session {
   acceptSslCerts(accept) {
     this.secureSsl_ = !accept;
     return this;
+  }
+
+  getWindowId() {
+    return this.windowId_;
+  }
+
+  setWindowId(windowId) {
+    this.windowId_ = windowId;
+    return this;
+  }
+
+  updateTabs(tabsData) {
+    if (!tabsData) {
+      // TODO: request this.windowId_ tabs
+      tabsData = Promise.resolve([]);
+    }
+
+    return Promise.resolve(tabsData)
+      .then(data => {
+
+        // TODO: check if some tabs are closed
+
+        // check for newly-opened tabs
+        Promise.all(
+          data.map(tabData => {
+            if (!this.getTabById(tabData.id)) {
+              let tab = new Tab(tabData);
+              this.tabs_.push(tab);
+
+              return tab.connectIfNecessary();
+            } else {
+              return Promise.resolve();
+            }
+          })
+        );
+      });
+  }
+
+  getTabIds() {
+  }
+
+  getTabById(id) {
+    let found = null;
+
+    this.tabs_.forEach(tab => {
+      if (tab.id === id) {
+        found = tab;
+      }
+    });
+
+    return found;
+  }
+
+  getCurrentTab() {
+    let tab = this.getTabById(this.currentTabId_);
+    return tab || this.tabs_[0];
+  }
+
+  switchToTopFrame() {
+  }
+
+  switchToParentFrame() {
+  }
+
+  switchToSubFrame() {
   }
 }
 
@@ -271,9 +328,8 @@ function removeWindow(windowId) {
  * [New Session command](https://www.w3.org/TR/webdriver/#new-session)
  *
  * @param {!Object<*>} parameters The command parameters.
- * @param {!Debugger} dbg
  */
-function newSession(parameters, dbg) {
+function newSession(parameters) {
 
   if (activeSessions.length >= MAXIMUM_ACTIVE_SESSIONS) {
     return Promise.reject(
@@ -304,6 +360,7 @@ function newSession(parameters, dbg) {
   }
 
   let session = new Session();
+
   activeSessions.push(session);
 
   if (capsResult.pageLoadStrategy) {
@@ -312,23 +369,17 @@ function newSession(parameters, dbg) {
 
   return createWindow()
     .then(function(window) {
-      let chromeOptions = capsResult.chromeOptions || {};
+      session.setWindowId(window.id);
 
-      if (chromeOptions.mobileEmulation) {
-        return dbg.connect(window.tabs[0])
-          .then(function() {
-            return Promise.all([
-              dbg.sendCommand('Emulation.setDeviceMetricsOverride', NEXUS5_EMULATION_METRICS),
-              // Network.enable must be called for UA overriding to work
-              dbg.sendCommand('Network.enable'),
-              dbg.sendCommand('Network.setUserAgentOverride', { userAgent: NEXUS5_USERAGENT }),
-              dbg.sendCommand('Emulation.setTouchEmulationEnabled', {
-                enabled: true,
-                configuration: 'mobile'
-              })
-            ]);
-          });
-      }
+      session.updateTabs(window.tabs)
+        .then(function() {
+          let tab = session.getCurrentTab(),
+            chromeOptions = capsResult.chromeOptions || {};
+
+          if (chromeOptions.mobileEmulation) {
+            return tab.setMobileEmulationOverride();
+          }
+        });
     })
     .then(function() {
       return {
@@ -349,12 +400,14 @@ function newSession(parameters, dbg) {
  * @param {!Object<*>} parameters The command parameters.
  */
 function deleteSession(parameters) {
-  console.info(parameters);
-  // TODO: close session windows
+  let session = findSession(parameters.sessionId);
 
-  removeSession(parameters.sessionId);
+  if (!session) {
+    return Promise.reject(new error.NoSuchSessionError());
+  }
 
-  return Promise.resolve();
+  return removeWindow(session.getWindowId())
+    .then(() => removeSession(parameters.sessionId));
 }
 
 

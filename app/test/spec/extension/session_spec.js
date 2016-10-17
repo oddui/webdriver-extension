@@ -5,6 +5,7 @@ const expect = require('chai').expect,
   fakeChromeApi = require('./fake_chrome_api'),
   sessions = require('../../../src/lib/extension/session'),
   Session = sessions.Session,
+  FrameInfo = sessions.FrameInfo,
   addSession = sessions.addSession,
   findSession = sessions.findSession,
   removeSession = sessions.removeSession,
@@ -216,6 +217,57 @@ describe('extension', () => {
         });
       });
     });
+
+
+    describe('frames', () => {
+      const frameInfos = [
+        new FrameInfo('',  '1', 'wd-1'),
+        new FrameInfo('1', '2', 'wd-2'),
+        new FrameInfo('2', '3', 'wd-3')
+      ];
+
+      beforeEach(() => session.frames = frameInfos.slice(0));
+
+      describe('switchToTopFrame', () => {
+        it('empties the frames array', () => {
+          session.switchToTopFrame();
+          expect(session.frames.length).to.equal(0);
+        });
+      });
+
+      describe('switchToParentFrame', () => {
+        it('removes a frame from the end of frames array', () => {
+          session.switchToParentFrame();
+          expect(session.getCurrentFrameId()).to.equal('2');
+        });
+      });
+
+      describe('switchToSubFrame', () => {
+        beforeEach(() => session.switchToSubFrame('4', 'wd-4'));
+
+        it('appends the sub frame to the end of frames array', () => {
+          let subFrame = session.frames[session.frames.length-1];
+          expect(subFrame.frameId).to.equal('4');
+        });
+
+        it('set parent frame id', () => {
+          let subFrame = session.frames[session.frames.length-1];
+          expect(subFrame.parentFrameId).to.equal('3');
+        });
+      });
+
+      describe('getCurrentFrameId', () => {
+        it('returns frame id of the frame from the end of frames array', () => {
+          expect(session.getCurrentFrameId()).to.equal('3');
+        });
+
+        it('returns "" for top frame', () => {
+          session.frames = [];
+          expect(session.getCurrentFrameId()).to.equal('');
+        });
+      });
+    });
+
   });
 
 });

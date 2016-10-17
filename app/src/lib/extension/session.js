@@ -87,7 +87,7 @@ class Session {
      * List of frames for each frame to the current target frame from the
      * top frame. If target frame is window.top, this list will be empty.
      */
-    this.frames_ = [];
+    this.frames = [];
   }
 
   getId() {
@@ -279,12 +279,42 @@ class Session {
   }
 
   switchToTopFrame() {
+    this.frames.length = 0;
   }
 
   switchToParentFrame() {
+    if (this.frames.length) {
+      this.frames.pop();
+    }
   }
 
-  switchToSubFrame() {
+  switchToSubFrame(frameId, webdriverFrameId) {
+    let parentFrameId = '',
+      framesLength = this.frames.length;
+
+    if (framesLength) {
+      parentFrameId = this.frames[framesLength - 1].frameId;
+    }
+    this.frames.push(new FrameInfo(parentFrameId, frameId, webdriverFrameId));
+  }
+
+  getCurrentFrameId() {
+    let framesLength = this.frames.length;
+
+    if (framesLength) {
+      return this.frames[framesLength - 1].frameId;
+    } else {
+      return '';
+    }
+  }
+}
+
+
+class FrameInfo {
+  constructor(parentFrameId, frameId, webdriverFrameId) {
+    this.parentFrameId = parentFrameId;
+    this.frameId = frameId;
+    this.webdriverFrameId = webdriverFrameId;
   }
 }
 
@@ -306,5 +336,6 @@ module.exports = {
   findSession: findSession,
   addSession: addSession,
   removeSession: removeSession,
-  clearActiveSessions: clearActiveSessions
+  clearActiveSessions: clearActiveSessions,
+  FrameInfo: FrameInfo
 };

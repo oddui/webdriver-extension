@@ -102,6 +102,30 @@ describe('extension', function() {
             expect(result).not.to.be.undefined;
           });
       });
+
+      describe('timeout', () => {
+        beforeEach(() => chrome.debugger.setCommandDuration(200));
+
+        it('resolves if not timed out', function() {
+          return dbg.connect(tab.id)
+            .then(function() {
+              return dbg.sendCommand(null, null, 300);
+            })
+            .then(function(result) {
+              expect(result).not.to.be.undefined;
+            });
+        });
+
+        it('rejects if timed out', function() {
+          return dbg.connect(tab.id)
+            .then(function() {
+              return dbg.sendCommand(null, null, 100);
+            })
+            .catch(function(e) {
+              expect(e.message).to.match(/timed out/i);
+            });
+        });
+      });
     });
 
   });

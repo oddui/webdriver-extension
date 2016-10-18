@@ -127,9 +127,10 @@ class Debugger extends EventEmitter {
    *
    * @param {!string} command
    * @param {!Object} params
+   * @param {=number} timeout Optional timeout in millisecconds
    * @return {!Promise}
    */
-  sendCommand(command, params) {
+  sendCommand(command, params, timeout) {
     if (this.tabId_ === null) {
       throw new Error('connect() must be called before attempting to send commands.');
     }
@@ -137,15 +138,27 @@ class Debugger extends EventEmitter {
     return new Promise((resolve, reject) => {
       this.log_.finest(`method => browser, ${command} ${JSON.stringify(params)}`);
 
+      let timer = null;
+
+      if (typeof timeout === 'number') {
+        timer = setTimeout(() => {
+          let message = `${command} timed out after ${timeout} milliseconds`;
+          this.log_.severe(message);
+          reject(new Error(message));
+        }, timeout);
+      }
+
       chrome.debugger.sendCommand({tabId: this.tabId_}, command, params, result => {
+        timer && clearTimeout(timer);
+
         if (chrome.runtime.lastError) {
           this.log_.severe(`method <= browser ERR, ${command} ${JSON.stringify(chrome.runtime.lastError)}`);
-          return reject(chrome.runtime.lastError);
+          return reject(new Error(chrome.runtime.lastError.message));
         }
 
         if (result.wasThrown) {
           this.log_.severe(`method <= browser ERR, ${command} ${JSON.stringify(result)}`);
-          return reject(result.exceptionDetails);
+          return reject(new Error(result.exceptionDetails));
         }
 
         this.log_.finest(`method <= browser OK, ${command} ${JSON.stringify(result)}`);

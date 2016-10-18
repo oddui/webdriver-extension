@@ -35,7 +35,8 @@ class EventEmitter {
 function debuggerApi() {
 
   let onEvent = new EventEmitter(),
-    onDetach = new EventEmitter();
+    onDetach = new EventEmitter(),
+    commandDuration = 0;
 
   function emitEvent(method, params) {
     onEvent.emit({}, method, params);
@@ -43,6 +44,10 @@ function debuggerApi() {
 
   function emitDetach(detachReason) {
     onDetach.emit({}, detachReason);
+  }
+
+  function setCommandDuration(duration) {
+    commandDuration = duration;
   }
 
   function attach(debuggee, version, cb) {
@@ -56,7 +61,10 @@ function debuggerApi() {
   function sendCommand(debuggee, command, params, cb) {
     setTimeout(function() {
       cb({});
-    });
+    }, commandDuration);
+
+    // reset command duration to 0
+    setCommandDuration(0);
   }
 
   return {
@@ -67,7 +75,8 @@ function debuggerApi() {
     onDetach: onDetach,
 
     emitEvent: emitEvent,
-    emitDetach: emitDetach
+    emitDetach: emitDetach,
+    setCommandDuration: setCommandDuration
   };
 }
 

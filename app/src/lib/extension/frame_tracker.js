@@ -2,7 +2,8 @@
 
 
 const error = require('selenium-webdriver/lib/error'),
-  logging = require('selenium-webdriver/lib/logging');
+  logging = require('selenium-webdriver/lib/logging'),
+  get = require('lodash/get');
 
 
 /**
@@ -24,15 +25,21 @@ class FrameTracker {
     this.onFrameNavigated_ = this.onFrameNavigated_.bind(this);
   }
 
-  onExecutionContextCreated_(params) {
-    let context = params.context;
+  getParam_(params, path) {
+    let value = get(params, path);
 
-    if (!context) {
-      throw new error.WebDriverError('Runtime.executionContextCreated parameters missing context.');
+    if (value === undefined) {
+      throw new error.WebDriverError(`Missing or invalid parameter: ${path}.`);
+    } else {
+      return value;
     }
+  }
 
-    if (!context.id) {
-      throw new error.WebDriverError('Runtime.executionContextCreated has invalid context');
+  onExecutionContextCreated_(params) {
+    let context = this.getParam_(params, 'context');
+
+    if (context.id === undefined) {
+      throw new error.WebDriverError('Invalid context.');
     }
 
     let isDefault, frameId;
@@ -43,27 +50,23 @@ class FrameTracker {
     }
 
     // TODO: remove this when we stop supporting Chrome 53.
-    if (context.isDefault) {
+    if (context.isDefault !== undefined) {
       isDefault = context.isDefault;
     }
 
     // TODO: remove this when we stop supporting Chrome 53.
-    if (context.frameId) {
+    if (context.frameId !== undefined) {
       frameId = context.frameId;
     }
 
-    if (isDefault && frameId) {
+    if (isDefault && frameId !== undefined) {
       this.log_.finest(`tab ${this.debugger_.getTabId()} add frame tracking: ${frameId} -> ${context.id}`);
       this.frameToContextMap_.set(frameId, context.id);
     }
   }
 
   onExecutionContextDestroyed_(params) {
-    let executionContextId = params.executionContextId;
-
-    if (!executionContextId) {
-      throw new error.WebDriverError('Runtime.executionContextDestroyed parameters missing executionContextId.');
-    }
+    let executionContextId = this.getParam_(params, 'executionContextId');
 
     for (let entry of this.frameToContextMap_) {
       if (entry[1] === executionContextId) {
@@ -79,7 +82,9 @@ class FrameTracker {
   }
 
   onFrameNavigated_(params) {
-    if (!params.frame.parentId) {
+    let frame = this.getParam_(params, 'frame');
+
+    if (frame.parentId === undefined) {
       this.frameToContextMap_.clear();
     }
   }
@@ -108,7 +113,7 @@ class FrameTracker {
   getContextIdForFrame(frameId) {
     let contextId = this.frameToContextMap_.get(frameId);
 
-    if (contextId) {
+    if (contextId !== undefined) {
       return contextId;
     } else {
       throw new error.WebDriverError('Frame does not have execution context.');

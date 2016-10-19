@@ -14,14 +14,16 @@ describe('extension', () => {
 
     beforeEach(() => {
       frameTracker = new FrameTracker();
-      frameTracker.frameToContextMap_.set(randomNumber(0, 100), randomNumber(0, 100));
 
       dbg = new FakeDebugger();
       sinon.spy(dbg, 'on');
       sinon.spy(dbg, 'sendCommand');
 
       return dbg.connect(1)
-        .then(() => frameTracker.connect(dbg));
+        .then(() => frameTracker.connect(dbg))
+        .then(() => {
+          frameTracker.frameToContextMap_.set(randomFrameId(), randomContextId());
+        });
     });
 
     afterEach(() => {
@@ -31,10 +33,10 @@ describe('extension', () => {
 
     describe('connect', () => {
       it('adds listeners to debugger events', () => {
-        expect(dbg.on.calledWith('Runtime.executionContextCreated', dbg.onExecutionContextCreated_));
-        expect(dbg.on.calledWith('Runtime.executionContextDestroyed', dbg.onExecutionContextDestroyed_));
-        expect(dbg.on.calledWith('Runtime.executionContextsCleared', dbg.onExecutionContextsCleared_));
-        expect(dbg.on.calledWith('Page.frameNavigated', dbg.onFrameNavigated_));
+        expect(dbg.on.calledWith('Runtime.executionContextCreated', frameTracker.onExecutionContextCreated_)).to.be.true;
+        expect(dbg.on.calledWith('Runtime.executionContextDestroyed', frameTracker.onExecutionContextDestroyed_)).to.be.true;
+        expect(dbg.on.calledWith('Runtime.executionContextsCleared', frameTracker.onExecutionContextsCleared_)).to.be.true;
+        expect(dbg.on.calledWith('Page.frameNavigated', frameTracker.onFrameNavigated_)).to.be.true;
       });
 
       it('enables reporting runtime and page events', () => {
@@ -46,7 +48,7 @@ describe('extension', () => {
     describe('onExecutionContextCreated', () => {
       it('throws WebDriverError if parameters missing context', () => {
         expect(() => dbg.emit('Runtime.executionContextCreated', {}))
-          .to.throw(error.WebDriverError, /missing context/i);
+          .to.throw(error.WebDriverError, /missing .+ context/i);
       });
 
       it('throws WebDriverError if parameters has invalid context', () => {
@@ -56,10 +58,10 @@ describe('extension', () => {
 
       it('tracks frame if context is default and contians frameId', () => {
         const context = {
-          id: randomNumber(0, 100),
+          id: randomContextId(),
           auxData: {
             isDefault: true,
-            frameId: randomNumber(0, 100)
+            frameId: randomFrameId()
           }
         };
         dbg.emit('Runtime.executionContextCreated', { context: context });
@@ -72,14 +74,14 @@ describe('extension', () => {
       let frameId, contextId;
 
       beforeEach(() => {
-        frameId = randomNumber(0, 100);
-        contextId = randomNumber(0, 100);
+        frameId = randomFrameId();
+        contextId = randomContextId();
         frameTracker.frameToContextMap_.set(frameId, contextId);
       });
 
       it('throws WebDriverError if parameters missing executionContextId', () => {
         expect(() => dbg.emit('Runtime.executionContextDestroyed', {}))
-          .to.throw(error.WebDriverError, /missing executionContextId/i);
+          .to.throw(error.WebDriverError, /missing .+ executionContextId/i);
       });
 
       it('deletes the tracking frame', () => {
@@ -100,7 +102,7 @@ describe('extension', () => {
 
     describe('Page.frameNavigated', () => {
       it('clears the internal frame tracking map if top frame navigated', () => {
-        dbg.emit('Page.frameNavigated', { frame: { parentId: null } });
+        dbg.emit('Page.frameNavigated', { frame: {} });
 
         expect(frameTracker.frameToContextMap_.size).to.equal(0);
       });
@@ -113,11 +115,19 @@ describe('extension', () => {
         expect(frameTracker.frameToContextMap_.size).to.equal(0);
       });
     });
-
-
-    function randomNumber(min, max) {
-      return Math.floor(Math.random() * (max - min)) + min;
-    }
   });
 
 });
+
+
+function randomNumber(min, max) {
+  return Math.floor(Math.random() * (max - min)) + min;
+}
+
+function randomFrameId() {
+  return randomNumber(0, 100).toString();
+}
+
+function randomContextId() {
+  return randomNumber(0, 100);
+}

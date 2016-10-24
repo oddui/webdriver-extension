@@ -29,12 +29,14 @@ class JavaScriptDialogManager {
       throw new error.WebDriverError('Page.javascriptDialogOpening parameters has invalid message.');
     }
 
+    this.log_.finest(`tab ${this.debugger_.getTabId()} has dialog open: ${message}`);
     this.unhandledDialogQueue_.push(message);
   }
 
   onJavaScriptDialogClosed_() {
     // 'Page.javascriptDialogClosed' is only sent when all dialogs have been closed.
     // Clear the unhandled queue in case the user closed a dialog manually.
+    this.log_.finest(`tab ${this.debugger_.getTabId()} dialog closed`);
     this.unhandledDialogQueue_.length = 0;
   }
 

@@ -3,7 +3,8 @@
 
 const logging = require('selenium-webdriver/lib/logging'),
   Debugger = require('./debugger'),
-  FrameTracker = require('./frame_tracker');
+  FrameTracker = require('./frame_tracker'),
+  JavaScriptDialogManager = require('./javascript_dialog_manager');
 
 
 const NEXUS5_EMULATION_METRICS = {
@@ -38,7 +39,8 @@ class Tab {
 
     this.log_ = logging.getLogger('webdriver.extension.Tab');
     this.debugger_ = new Debugger();
-    this.frameTracker_ = new FrameTracker(this.debugger_);
+    this.frameTracker_ = new FrameTracker();
+    this.dialogManager_ = new JavaScriptDialogManager();
     this.navigationTracker_ = null;
   }
 
@@ -51,7 +53,8 @@ class Tab {
       return Promise.resolve();
     } else {
       return this.debugger_.connect(this.id_)
-        .then(() => this.frameTracker_.connect(this.debugger_));
+        .then(() => this.frameTracker_.connect(this.debugger_))
+        .then(() => this.dialogManager_.connect(this.debugger_));
     }
   }
 

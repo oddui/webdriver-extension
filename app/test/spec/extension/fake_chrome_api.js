@@ -132,18 +132,17 @@ function windowsApi() {
 }
 
 
-let originalChromeApi = null;
-
-
-exports.use = function() {
-  originalChromeApi = global.chrome;
-
-  global.chrome = {
+const originalChromeApi = global.chrome,
+  fakeChromeApi = {
     debugger: debuggerApi(),
     runtime: {},
     tabs: tabsApi(),
     windows: windowsApi()
   };
+
+
+exports.use = function() {
+  global.chrome = fakeChromeApi;
 };
 
 

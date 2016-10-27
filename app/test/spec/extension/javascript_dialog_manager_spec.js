@@ -36,7 +36,7 @@ describe('extension', () => {
       });
 
       it('enables reporting page events', () => {
-        expect(dbg.sendCommand.calledWith('Page.enable'));
+        expect(dbg.sendCommand.calledWith('Page.enable')).to.be.true;
       });
     });
 
@@ -89,7 +89,7 @@ describe('extension', () => {
       it('sends Page.handleJavaScriptDialog debugging command', () => {
         return dialogManager.handleDialog()
           .then(() => {
-            expect(dbg.sendCommand.calledWith('Page.handleJavaScriptDialog'));
+            expect(dbg.sendCommand.calledWith('Page.handleJavaScriptDialog')).to.be.true;
           });
       });
     });

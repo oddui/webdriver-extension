@@ -8,8 +8,7 @@ const expect = require('chai').expect,
   FrameInfo = sessions.FrameInfo,
   addSession = sessions.addSession,
   findSession = sessions.findSession,
-  removeSession = sessions.removeSession,
-  clearActiveSessions = sessions.clearActiveSessions;
+  removeSession = sessions.removeSession;
 
 
 describe('extension', () => {
@@ -22,7 +21,7 @@ describe('extension', () => {
       addSession(session);
     });
 
-    afterEach(clearActiveSessions);
+    afterEach(sessions.clearActiveSessions);
 
     describe('findSession', () => {
       it('finds session by id', () => {

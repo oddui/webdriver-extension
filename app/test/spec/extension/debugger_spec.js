@@ -101,7 +101,12 @@ describe('extension', () => {
         it('rejects if timed out', () => {
           return dbg.connect(tab.id)
             .then(() => dbg.sendCommand('method', {}, 100))
-            .catch((e) => expect(e.message).to.match(/timed out/i));
+            .catch((e) => expect(e.message).to.match(/timed out/i))
+            .then(() => {
+              // Give enough time for the result callback to execute before
+              // the fakeChromeApi gets restored.
+              return new Promise(resolve => setTimeout(resolve, 200));
+            });
         });
       });
     });

@@ -40,8 +40,8 @@ describe('extension', () => {
       });
 
       it('enables reporting runtime and page events', () => {
-        expect(dbg.sendCommand.calledWith('Runtime.enable'));
-        expect(dbg.sendCommand.calledWith('Page.enable'));
+        expect(dbg.sendCommand.calledWith('Runtime.enable')).to.be.true;
+        expect(dbg.sendCommand.calledWith('Page.enable')).to.be.true;
       });
     });
 

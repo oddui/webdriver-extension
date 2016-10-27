@@ -64,12 +64,30 @@ class Debugger extends EventEmitter {
     super.off(eventName, cb);
   }
 
-  sendCommand(command, params) {
+  onCommandSuccess(cb) {
+    if (this.tabId_ === null) {
+      throw new Error('connect() must be called before attempting to listen to events.');
+    }
+
+    super.on('commandSuccess', cb);
+  }
+
+  offCommandSuccess(cb) {
+    if (this.tabId_ === null) {
+      throw new Error('connect() must be called before attempting to listen to events.');
+    }
+
+    super.off('commandSuccess', cb);
+  }
+
+  sendCommand(command, params, timeout) {
     if (this.tabId_ === null) {
       throw new Error('connect() must be called before attempting to send commands.');
     }
 
-    return Promise.resolve();
+    this.emit('commandSuccess', command, {}, timeout);
+
+    return Promise.resolve({});
   }
 }
 

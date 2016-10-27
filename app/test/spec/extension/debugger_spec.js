@@ -6,51 +6,39 @@ const expect = require('chai').expect,
   Debugger = require('../../../src/lib/extension/debugger');
 
 
-describe('extension', function() {
+describe('extension', () => {
 
-  describe('Debugger', function() {
+  describe('Debugger', () => {
 
     let dbg, tab = { id: 1 };
 
     before(fakeChromeApi.use);
     after(fakeChromeApi.restore);
 
-    beforeEach(function() {
-      dbg = new Debugger();
-    });
+    beforeEach(() => dbg = new Debugger());
 
 
-    describe('isConnected', function() {
-      it('returns true if connected', function() {
+    describe('isConnected', () => {
+      it('returns true if connected', () => {
         return dbg.connect(tab.id)
-          .then(function() {
-            expect(dbg.isConnected()).to.be.true;
-          })
-          .then(dbg.disconnect.bind(dbg))
-          .then(function() {
-            expect(dbg.isConnected()).to.be.false;
-          });
+          .then(() => expect(dbg.isConnected()).to.be.true)
+          .then(() => dbg.disconnect())
+          .then(() => expect(dbg.isConnected()).to.be.false);
       });
     });
 
 
-    describe('connect', function() {
-      beforeEach(function() {
-        return dbg.connect(tab.id);
-      });
+    describe('connect', () => {
 
-      afterEach(function() {
-        return dbg.disconnect();
-      });
+      beforeEach(() => dbg.connect(tab.id));
+      afterEach(() => dbg.disconnect());
 
-      it('returns resolved promise if connect again', function() {
+      it('returns resolved promise if connect again', () => {
         return dbg.connect(tab.id)
-          .then(function() {
-            expect(dbg.getTabId()).to.equal(tab.id);
-          });
+          .then(() => expect(dbg.getTabId()).to.equal(tab.id));
       });
 
-      it('emits debugger events', function() {
+      it('emits debugger events', () => {
         let listener = sinon.spy(),
           params = { arg: 1 };
         dbg.on('method', listener);
@@ -59,71 +47,61 @@ describe('extension', function() {
         expect(listener.calledWith(params)).to.be.true;
       });
 
-      it('cleans debugger state on unexpected detach', function() {
+      it('cleans debugger state on unexpected detach', () => {
         chrome.debugger.emitDetach('user_canceled');
         expect(dbg.getTabId()).to.be.null;
       });
     });
 
 
-    describe('disconnect', function() {
-      beforeEach(function() {
+    describe('disconnect', () => {
+      beforeEach(() => {
         return dbg.connect(tab.id)
-          .then(dbg.disconnect.bind(dbg));
+          .then(() => dbg.disconnect());
       });
 
-      it('returns resolved promise if disconnect again', function() {
+      it('returns resolved promise if disconnect again', () => {
         return dbg.disconnect()
-          .then(function() {
-            expect(dbg.getTabId()).to.be.null;
-          });
+          .then(() => expect(dbg.getTabId()).to.be.null);
       });
 
-      it('cleans debugger state', function() {
-        expect(dbg.getTabId()).to.be.null;
-      });
+      it('cleans debugger state', () => expect(dbg.getTabId()).to.be.null);
     });
 
 
-    describe('sendCommand', function() {
-
-      it('throws error if not connected to debuggee', function() {
-        expect(function() {
-          dbg.sendCommand();
-        }).to.throw(/connect\(\) must be called/i);
+    describe('sendCommand', () => {
+      it('throws error if not connected to debuggee', () => {
+        expect(() => dbg.sendCommand()).to.throw(/connect\(\) must be called/i);
       });
 
-      it('resolves with command result', function() {
+      it('resolves with command result', () => {
         return dbg.connect(tab.id)
-          .then(function() {
-            return dbg.sendCommand();
-          })
-          .then(function(result) {
-            expect(result).not.to.be.undefined;
-          });
+          .then(() => dbg.sendCommand())
+          .then((result) => expect(result).not.to.be.undefined);
       });
 
-      describe('timeout', () => {
+      it('emits commandSuccess event', () => {
+        let listener = sinon.spy();
+
+        return dbg.connect(tab.id)
+          .then(() => dbg.onCommandSuccess(listener))
+          .then(() => dbg.sendCommand('method', {}))
+          .then((result) => expect(listener.calledWith('method', sinon.match(result))).be.true);
+      });
+
+      describe('with timeout', () => {
         beforeEach(() => chrome.debugger.setCommandDuration(200));
 
-        it('resolves if not timed out', function() {
+        it('resolves if not timed out', () => {
           return dbg.connect(tab.id)
-            .then(function() {
-              return dbg.sendCommand(null, null, 300);
-            })
-            .then(function(result) {
-              expect(result).not.to.be.undefined;
-            });
+            .then(() => dbg.sendCommand('method', {}, 300))
+            .then((result) => expect(result).not.to.be.undefined);
         });
 
-        it('rejects if timed out', function() {
+        it('rejects if timed out', () => {
           return dbg.connect(tab.id)
-            .then(function() {
-              return dbg.sendCommand(null, null, 100);
-            })
-            .catch(function(e) {
-              expect(e.message).to.match(/timed out/i);
-            });
+            .then(() => dbg.sendCommand('method', {}, 100))
+            .catch((e) => expect(e.message).to.match(/timed out/i));
         });
       });
     });

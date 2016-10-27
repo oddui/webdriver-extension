@@ -81,7 +81,8 @@ class Debugger extends EventEmitter {
   }
 
   /**
-   * Bind listeners for protocol events
+   * Bind listeners for protocol events. The listener is invoked with the event parameters.
+   *
    * @param {!string} eventName
    * @param {function(...)} cb
    */
@@ -95,8 +96,9 @@ class Debugger extends EventEmitter {
   }
 
   /**
-   * Bind a one-time listener for protocol events. Listener is removed once it
-   * has been called.
+   * Bind a one-time listener for protocol events. The listener is invoked with the event
+   * parameters and is removed once it has been invoked.
+   *
    * @param {!string} eventName
    * @param {function(...)} cb
    */
@@ -111,6 +113,7 @@ class Debugger extends EventEmitter {
 
   /**
    * Unbind event listeners
+   *
    * @param {!string} eventName
    * @param {function(...)} cb
    */
@@ -120,6 +123,35 @@ class Debugger extends EventEmitter {
     }
 
     super.off(eventName, cb);
+  }
+
+  /**
+   * Bind listener for command response. The listener is invoked with 3 arguments:
+   * (command, response, timeout)
+   *
+   * @param {function} cb
+   */
+  onCommandSuccess(cb) {
+    if (this.tabId_ === null) {
+      throw new Error('connect() must be called before attempting to listen to events.');
+    }
+
+    this.log_.finest(`listen for command response`);
+    super.on('commandSuccess', cb);
+  }
+
+
+  /**
+   * Unbind listener for command response
+   *
+   * @param {function} cb
+   */
+  offCommandSuccess(cb) {
+    if (this.tabId_ === null) {
+      throw new Error('connect() must be called before attempting to listen to events.');
+    }
+
+    super.off('commandSuccess', cb);
   }
 
   /**
@@ -162,6 +194,9 @@ class Debugger extends EventEmitter {
         }
 
         this.log_.finest(`method <= browser OK, ${command} ${JSON.stringify(result)}`);
+
+        this.emit('commandSuccess', command, result, timeout);
+
         resolve(result);
       });
     });

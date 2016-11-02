@@ -164,7 +164,7 @@ class Debugger extends EventEmitter {
    */
   sendCommand(command, params, timeout) {
     if (this.tabId_ === null) {
-      throw new Error('connect() must be called before attempting to send commands.');
+      return Promise.reject(new Error('connect() must be called before attempting to send commands.'));
     }
 
     return new Promise((resolve, reject) => {

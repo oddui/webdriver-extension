@@ -70,8 +70,9 @@ describe('extension', () => {
 
 
     describe('sendCommand', () => {
-      it('throws error if not connected to debuggee', () => {
-        expect(() => dbg.sendCommand()).to.throw(/connect\(\) must be called/i);
+      it('rejects if not connected to debuggee', () => {
+        return dbg.sendCommand()
+          .catch((e) => expect(e.message).to.match(/connect\(\) must be called/i));
       });
 
       it('resolves with command result', () => {

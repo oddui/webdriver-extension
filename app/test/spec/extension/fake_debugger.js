@@ -11,6 +11,7 @@ class Debugger extends EventEmitter {
     super();
 
     this.tabId_ = null;
+    this.commandToResultMap_ = new Map();
   }
 
   getTabId() {
@@ -82,12 +83,23 @@ class Debugger extends EventEmitter {
 
   sendCommand(command, params, timeout) {
     if (this.tabId_ === null) {
-      throw new Error('connect() must be called before attempting to send commands.');
+      return Promise.reject(new Error('connect() must be called before attempting to send commands.'));
     }
 
     this.emit('commandSuccess', command, {}, timeout);
 
-    return Promise.resolve({});
+    return Promise.resolve(this.commandToResultMap_.get(command) || {});
+  }
+
+  /**
+   * Sets a mock result for a command
+   *
+   * @param {string} command
+   * @param {any} result
+   */
+  setCommandResult(command, result) {
+    this.commandToResultMap_.set(command, result);
+    return this;
   }
 }
 

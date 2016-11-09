@@ -4,7 +4,8 @@
 const logging = require('selenium-webdriver/lib/logging'),
   Debugger = require('./debugger'),
   FrameTracker = require('./frame_tracker'),
-  JavaScriptDialogManager = require('./javascript_dialog_manager');
+  JavaScriptDialogManager = require('./javascript_dialog_manager'),
+  navigationTrackers = require('./navigation_tracker');
 
 
 const NEXUS5_EMULATION_METRICS = {
@@ -34,14 +35,14 @@ const NEXUS5_USERAGENT =
  */
 class Tab {
 
-  constructor(tabData) {
+  constructor(tabData, pageLoadStrategy) {
     this.id_ = tabData.id;
 
     this.log_ = logging.getLogger('webdriver.extension.Tab');
     this.debugger_ = new Debugger();
     this.frameTracker_ = new FrameTracker();
     this.dialogManager_ = new JavaScriptDialogManager();
-    this.navigationTracker_ = null;
+    this.navigationTracker_ = navigationTrackers.create(pageLoadStrategy, this.dialogManager_);
   }
 
   getId() {
@@ -54,7 +55,8 @@ class Tab {
     } else {
       return this.debugger_.connect(this.id_)
         .then(() => this.frameTracker_.connect(this.debugger_))
-        .then(() => this.dialogManager_.connect(this.debugger_));
+        .then(() => this.dialogManager_.connect(this.debugger_))
+        .then(() => this.navigationTracker_.connect(this.debugger_));
     }
   }
 

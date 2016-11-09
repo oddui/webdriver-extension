@@ -181,7 +181,7 @@ class Session {
         return Promise.all(
           tabs.map(tabData => {
             if (!this.getTabById(tabData.id)) {
-              let tab = new Tab(tabData);
+              let tab = new Tab(tabData, this.pageLoadStrategy_);
               this.tabs_.push(tab);
 
               return tab.connectIfNecessary();

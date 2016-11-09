@@ -94,7 +94,7 @@ describe('extension', () => {
     });
 
     describe('page load strategy', () => {
-      const PageLoadStrategy = sessions.PageLoadStrategy;
+      const PageLoadStrategy = require('../../../src/lib/extension/navigation_tracker').PageLoadStrategy;
 
       it('is normal by default', () => {
         expect(session.getPageLoadStrategy()).to.equal(PageLoadStrategy.NORMAL);
@@ -103,10 +103,6 @@ describe('extension', () => {
       it('can be set to other strategies', () => {
         session.setPageLoadStrategy(PageLoadStrategy.NONE);
         expect(session.getPageLoadStrategy()).to.equal(PageLoadStrategy.NONE);
-      });
-
-      it('throws error if set to non-supported strategies', () => {
-        expect(() => session.setPageLoadStrategy('not-supported')).to.throw(/not supported/i);
       });
     });
 

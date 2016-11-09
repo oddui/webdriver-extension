@@ -2,20 +2,12 @@
 
 
 const error = require('selenium-webdriver/lib/error'),
+  navigationTrackers = require('./navigation_tracker'),
+  PageLoadStrategy = navigationTrackers.PageLoadStrategy,
   Tab = require('./tab');
 
 
 const MAXIMUM_ACTIVE_SESSIONS = 1;
-
-
-/**
- * Enum of page load strategy
- */
-const PageLoadStrategy = {
-  NORMAL: 'normal',
-  EAGER: 'eager',
-  NONE: 'none'
-};
 
 
 const activeSessions = [];
@@ -100,9 +92,7 @@ class Session {
 
   setScriptTimeout(timeout) {
     if (typeof timeout !== 'number') {
-      throw(
-        new error.WebDriverError('Script timeout must be a number.')
-      );
+      throw new error.WebDriverError('Script timeout must be a number.');
     }
 
     this.scriptTimeout_ = timeout;
@@ -115,9 +105,7 @@ class Session {
 
   setPageLoadTimeout(timeout) {
     if (typeof timeout !== 'number') {
-      throw(
-        new error.WebDriverError('Page load timeout must be a number.')
-      );
+      throw new error.WebDriverError('Page load timeout must be a number.');
     }
 
     this.pageLoadTimeout_ = timeout;
@@ -130,9 +118,7 @@ class Session {
 
   setImplicitWaitTimeout(timeout) {
     if (typeof timeout !== 'number') {
-      throw(
-        new error.WebDriverError('Implicit wait timeout must be a number.')
-      );
+      throw new error.WebDriverError('Implicit wait timeout must be a number.');
     }
 
     this.implicitWaitTimeout_ = timeout;
@@ -145,24 +131,11 @@ class Session {
 
   setPageLoadStrategy(strategy) {
     if (typeof strategy !== 'string') {
-      throw(
-        new error.WebDriverError('Page load strategy must be a string.')
-      );
+      throw new error.WebDriverError('Page load strategy must be a string.');
     }
 
-    if (strategy === PageLoadStrategy.NORMAL ||
-      strategy === PageLoadStrategy.EAGER ||
-      strategy === PageLoadStrategy.NONE) {
-
-      this.pageLoadStrategy_ = strategy;
-      return this;
-    }
-
-    throw(
-      new error.WebDriverError(
-        `Page load strategy '${strategy}' is not supported.`
-      )
-    );
+    this.pageLoadStrategy_ = strategy;
+    return this;
   }
 
   getSecureSsl() {

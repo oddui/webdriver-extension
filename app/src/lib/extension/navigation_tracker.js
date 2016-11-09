@@ -7,6 +7,28 @@ const  error = require('selenium-webdriver/lib/error'),
 
 
 /**
+ * Enum of page load strategy
+ */
+const PageLoadStrategy = {
+  NORMAL: 'normal',
+  EAGER: 'eager',
+  NONE: 'none'
+};
+
+
+function create(strategy, dialogManager) {
+  switch(strategy) {
+    case PageLoadStrategy.NONE:
+      return new NonBlockingNavigationTracker();
+    case PageLoadStrategy.NORMAL:
+      return new NavigationTracker(dialogManager);
+    default:
+      throw new error.WebDriverError(`Page load strategy '${strategy}' is not supported.`);
+  }
+}
+
+
+/**
  * Loading state enum
  */
 const LoadingState = {
@@ -364,6 +386,9 @@ class NavigationTracker extends NavigationTrackerInterface {
 
 
 module.exports = {
+  PageLoadStrategy: PageLoadStrategy,
+  create: create,
+
   LoadingState: LoadingState,
   NavigationTracker: NavigationTracker,
   NonBlockingNavigationTracker: NonBlockingNavigationTracker

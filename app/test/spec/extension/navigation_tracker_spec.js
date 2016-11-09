@@ -13,6 +13,23 @@ const expect = require('chai').expect,
 
 describe('extension', () => {
 
+  describe('create', () => {
+    const PageLoadStrategy = navigationTrackers.PageLoadStrategy,
+      create = navigationTrackers.create;
+
+    it('returns an instance of NonBlockingNavigationTracker if strategy is none', () => {
+      expect(create(PageLoadStrategy.NONE)).to.be.instanceOf(NonBlockingNavigationTracker);
+    });
+
+    it('returns an instance of NavigationTracker if strategy is normal', () => {
+      expect(create(PageLoadStrategy.NORMAL)).to.be.instanceOf(NavigationTracker);
+    });
+
+    it('throws if strategy is invalid', () => {
+      expect(() => create('invalid')).to.throw(error.WebDriverError, /not supported/i);
+    });
+  });
+
   describe('NonBlockingNavigationTracker', () => {
     let tracker;
 

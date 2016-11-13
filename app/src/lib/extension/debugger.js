@@ -1,6 +1,7 @@
 'use strict';
 
 const EventEmitter = require('events'),
+  error = require('selenium-webdriver/lib/error'),
   logging = require('selenium-webdriver/lib/logging');
 
 const DEBUGGING_PROTOCOL_VERSION = '1.1';
@@ -176,7 +177,7 @@ class Debugger extends EventEmitter {
         timer = setTimeout(() => {
           let message = `${command} timed out after ${timeout} milliseconds`;
           this.log_.severe(message);
-          reject(new Error(message));
+          reject(new error.TimeoutError(message));
         }, timeout);
       }
 

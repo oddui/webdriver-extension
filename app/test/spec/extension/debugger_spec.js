@@ -3,6 +3,7 @@
 const expect = require('chai').expect,
   sinon = require('sinon'),
   fakeChromeApi = require('./fake_chrome_api'),
+  error = require('selenium-webdriver/lib/error'),
   Debugger = require('../../../src/lib/extension/debugger');
 
 
@@ -99,10 +100,10 @@ describe('extension', () => {
             .then((result) => expect(result).not.to.be.undefined);
         });
 
-        it('rejects if timed out', () => {
+        it('rejects with error.TimeoutError if timed out', () => {
           return dbg.connect(tab.id)
             .then(() => dbg.sendCommand('method', {}, 100))
-            .catch((e) => expect(e.message).to.match(/timed out/i))
+            .catch(e => expect(e).to.be.instanceOf(error.TimeoutError))
             .then(() => {
               // Give enough time for the result callback to execute before
               // the fakeChromeApi gets restored.

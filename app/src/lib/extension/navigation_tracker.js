@@ -122,9 +122,10 @@ class NavigationTracker extends NavigationTrackerInterface {
    * Gets whether a navigation is pending for the specified frame.
    *
    * @param {string} frameId The frame id. May be empty to signify the main frame.
+   * @param {number} timeout The timeout for debugger commands.
    * @return {Promise}
    */
-  isPendingNavigation(frameId) {
+  isPendingNavigation(frameId, timeout) {
     let isPending = null,
       BreakSignal = function() {};
 
@@ -140,7 +141,7 @@ class NavigationTracker extends NavigationTrackerInterface {
     // browser process, and may cause the renderer process to start a new
     // navigation. We need to call Runtime.evaluate to force a roundtrip to the
     // renderer process, and make sure that we notice any pending navigations.
-    return this.debugger_.sendCommand('Runtime.evaluate', { expression: '1' })
+    return this.debugger_.sendCommand('Runtime.evaluate', { expression: '1' }, timeout)
       .then(result => {
         if (get(result, 'result.value') !== 1) {
           throw(new error.WebDriverError('Cannot determine loading status.'));
@@ -161,7 +162,7 @@ class NavigationTracker extends NavigationTrackerInterface {
           // In the case that a http request is sent to server to fetch the page
           // content and the server hasn't responded at all, a dummy page is created
           // for the new window. In such case, the baseURL will be empty.
-          return this.debugger_.sendCommand('DOM.getDocument', {})
+          return this.debugger_.sendCommand('DOM.getDocument', {}, timeout)
             .then(result => {
               let baseUrl = get(result, 'root.baseURL');
               if (baseUrl === undefined) {
@@ -192,7 +193,7 @@ class NavigationTracker extends NavigationTrackerInterface {
                 }
               }).toString();
 
-              return this.debugger_.sendCommand('Runtime.evaluate', { expression: `(${FORCE_LOADING})()` });
+              return this.debugger_.sendCommand('Runtime.evaluate', { expression: `(${FORCE_LOADING})()` }, timeout);
             })
             .then(() => {
               // Between the time the JavaScript is evaluated and the result returns

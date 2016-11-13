@@ -77,12 +77,12 @@ class Tab {
     ]);
   }
 
-  load(url) {
-    return this.debugger_.sendCommand('Page.navigate', { url: url });
+  load(url, timeout) {
+    return this.debugger_.sendCommand('Page.navigate', { url: url }, timeout);
   }
 
-  reload() {
-    return this.debugger_.sendCommand('Page.reload', { ignoreCache: false });
+  reload(timeout) {
+    return this.debugger_.sendCommand('Page.reload', { ignoreCache: false }, timeout);
   }
 }
 

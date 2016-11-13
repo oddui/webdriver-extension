@@ -83,9 +83,10 @@ describe('extension', () => {
       });
 
       it('sends Page.navigate debugging command', () => {
-        const url = 'site.local';
-        return tab.load(url)
-          .then(() => expect(dbg.sendCommand.calledWith('Page.navigate', { url: url })).to.be.true);
+        const url = 'site.local',
+          timeout = 10000;
+        return tab.load(url, timeout)
+          .then(() => expect(dbg.sendCommand.calledWith('Page.navigate', { url: url }, timeout)).to.be.true);
       });
     });
 
@@ -96,8 +97,9 @@ describe('extension', () => {
       });
 
       it('sends Page.reload debugging command', () => {
-        return tab.reload()
-          .then(() => expect(dbg.sendCommand.calledWith('Page.reload')).to.be.true);
+        const timeout = 10000;
+        return tab.reload(timeout)
+          .then(() => expect(dbg.sendCommand.calledWith('Page.reload', { ignoreCache: false }, timeout)).to.be.true);
       });
     });
 

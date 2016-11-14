@@ -153,6 +153,11 @@ class NavigationTracker extends NavigationTrackerInterface {
           // to complete, since we won't see any more events from it until we reconnect.
           isPending = false;
           throw new BreakSignal();
+        } else if (e instanceof error.UnexpectedAlertOpenError) {
+          // Dialogs are open after the command is sent and before it gets processed,
+          // return control back to the test and let it dismiss the dialog.
+          isPending = false;
+          throw new BreakSignal();
         } else {
           throw e;
         }

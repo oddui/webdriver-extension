@@ -186,19 +186,18 @@ class NavigationTracker extends NavigationTrackerInterface {
               // received until all frames are loaded.  Loading is forced to start by
               // attaching a temporary iframe. Forcing loading to start is not necessary
               // if the main frame is not yet loaded.
-              const FORCE_LOADING = (() => {
-                let isLoaded = document.readyState === 'complete' ||
-                  document.readyState === 'interactive';
-                if (isLoaded) {
-                  let frame = document.createElement('iframe');
-                  frame.name = DUMMY_FRAME_NAME;
-                  frame.src = DUMMY_FRAME_URL;
-                  document.body.appendChild(frame);
-                  window.setTimeout(() => document.body.removeChild(frame));
-                }
-              }).toString();
+              const FORCE_LOADING = [`(() => {`,
+                `let isLoaded = document.readyState === 'complete' || document.readyState === 'interactive';`,
+                `if (isLoaded) {`,
+                `  let frame = document.createElement('iframe');`,
+                `  frame.name = '${DUMMY_FRAME_NAME}';`,
+                `  frame.src = '${DUMMY_FRAME_URL}';`,
+                `  document.body.appendChild(frame);`,
+                `  window.setTimeout(() => document.body.removeChild(frame));`,
+                `}`,
+              `})();`].join('');
 
-              return this.debugger_.sendCommand('Runtime.evaluate', { expression: `(${FORCE_LOADING})()` }, timeout);
+              return this.debugger_.sendCommand('Runtime.evaluate', { expression: FORCE_LOADING }, timeout);
             })
             .then(() => {
               // Between the time the JavaScript is evaluated and the result returns

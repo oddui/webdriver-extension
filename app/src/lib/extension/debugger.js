@@ -15,6 +15,9 @@ class Debugger extends EventEmitter {
     super();
 
     this.tabId_ = null;
+    this.nextCommandId_ = 1;
+    this.commandInfoMap_ = new Map();
+
     this.onEvent_ = this.onEvent_.bind(this);
     this.onUnexpectedDetach_ = this.onUnexpectedDetach_.bind(this);
 
@@ -24,6 +27,17 @@ class Debugger extends EventEmitter {
 
   onEvent_(debuggee, method, params) {
     this.emit(method, params);
+
+    // A command may have opened the dialog, which will block the response.
+    // Reject all registered commands. This is better than risking a hang.
+    if (method === 'Page.javascriptDialogOpening') {
+      for (let entry of this.commandInfoMap_) {
+        let id = entry[0], info = entry[1];
+
+        info.reject(new error.UnexpectedAlertOpenError(undefined, params.message));
+        this.commandInfoMap_.delete(id);
+      }
+    }
   }
 
   onUnexpectedDetach_(debuggee, detachReason) {
@@ -171,10 +185,20 @@ class Debugger extends EventEmitter {
     return new Promise((resolve, reject) => {
       this.log_.finest(`method => browser, ${command} ${JSON.stringify(params)}`);
 
+      let commandId = this.nextCommandId_++;
+
+      this.commandInfoMap_.set(commandId, {
+        resolve: resolve,
+        reject: reject,
+        name: command
+      });
+
       let timer = null;
 
       if (typeof timeout === 'number') {
         timer = setTimeout(() => {
+          this.commandInfoMap_.delete(commandId);
+
           let message = `${command} timed out after ${timeout} milliseconds`;
           this.log_.severe(message);
           reject(new error.TimeoutError(message));
@@ -183,6 +207,8 @@ class Debugger extends EventEmitter {
 
       chrome.debugger.sendCommand({tabId: this.tabId_}, command, params, result => {
         timer && clearTimeout(timer);
+
+        this.commandInfoMap_.delete(commandId);
 
         if (chrome.runtime.lastError) {
           this.log_.severe(`method <= browser ERR, ${command} ${JSON.stringify(chrome.runtime.lastError)}`);

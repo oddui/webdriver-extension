@@ -79,7 +79,10 @@ describe('extension', () => {
       it('resolves with command result', () => {
         return dbg.connect(tab.id)
           .then(() => dbg.sendCommand())
-          .then((result) => expect(result).not.to.be.undefined);
+          .then((result) => {
+            expect(result).not.to.be.undefined;
+            expect(dbg.commandInfoMap_.size).to.equal(0);
+          });
       });
 
       it('emits commandSuccess event', () => {
@@ -89,6 +92,19 @@ describe('extension', () => {
           .then(() => dbg.onCommandSuccess(listener))
           .then(() => dbg.sendCommand('method', {}))
           .then((result) => expect(listener.calledWith('method', sinon.match(result))).be.true);
+      });
+
+      it('rejects if blocked by JavaScript dialog', () => {
+        let promise = dbg.connect(tab.id)
+          .then(() => dbg.sendCommand('method'));
+
+        chrome.debugger.emitEvent('Page.javascriptDialogOpening', { message: 'dialog message' });
+
+        return promise
+          .catch(e => {
+            expect(e).to.be.instanceOf(error.UnexpectedAlertOpenError);
+            expect(e.getAlertText()).to.equal('dialog message');
+          });
       });
 
       describe('with timeout', () => {
@@ -103,7 +119,10 @@ describe('extension', () => {
         it('rejects with error.TimeoutError if timed out', () => {
           return dbg.connect(tab.id)
             .then(() => dbg.sendCommand('method', {}, 100))
-            .catch(e => expect(e).to.be.instanceOf(error.TimeoutError))
+            .catch(e => {
+              expect(e).to.be.instanceOf(error.TimeoutError);
+              expect(dbg.commandInfoMap_.size).to.equal(0);
+            })
             .then(() => {
               // Give enough time for the result callback to execute before
               // the fakeChromeApi gets restored.

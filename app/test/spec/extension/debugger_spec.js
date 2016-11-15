@@ -76,6 +76,8 @@ describe('extension', () => {
           .catch((e) => expect(e.message).to.match(/connect\(\) must be called/i));
       });
 
+      it('rejects if an evaluate-like method was thrown error');
+
       it('resolves with command result', () => {
         return dbg.connect(tab.id)
           .then(() => dbg.sendCommand())

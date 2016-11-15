@@ -215,9 +215,12 @@ class Debugger extends EventEmitter {
           return reject(new Error(chrome.runtime.lastError.message));
         }
 
-        if (result.wasThrown) {
-          this.log_.severe(`method <= browser ERR, ${command} ${JSON.stringify(result)}`);
-          return reject(new Error(result.exceptionDetails));
+        // As of crrev.com/411814, Runtime.evaluate no longer returns a 'wasThrown'
+        // property in the response, so check 'exceptionDetails' instead.
+        // TODO: Ignore 'wasThrown' when we stop supporting Chrome 53.
+        if (result.wasThrown || result.exceptionDetails) {
+          this.log_.severe(`method <= browser ERR, ${command} ${JSON.stringify(result.exceptionDetails)}`);
+          return reject(new Error(`${command} was thrown error.`));
         }
 
         this.log_.finest(`method <= browser OK, ${command} ${JSON.stringify(result)}`);

@@ -4,7 +4,8 @@ const cmd = require('selenium-webdriver/lib/command'),
   error = require('selenium-webdriver/lib/error'),
   logging = require('selenium-webdriver/lib/logging'),
   Session = require('selenium-webdriver/lib/session').Session,
-  SessionCommands = require('./session_commands');
+  SessionCommands = require('./session_commands'),
+  WindowCommands = require('./window_commands');
 
 
 /** @const {!Map<string, function>} */
@@ -18,10 +19,10 @@ const COMMAND_MAP = new Map([
   [cmd.Name.GET_CURRENT_WINDOW_HANDLE, noop],
   [cmd.Name.GET_WINDOW_HANDLES, noop],
   [cmd.Name.GET_CURRENT_URL, noop],
-  [cmd.Name.GET, noop],
+  [cmd.Name.GET, WindowCommands.go],
   [cmd.Name.GO_BACK, noop],
   [cmd.Name.GO_FORWARD, noop],
-  [cmd.Name.REFRESH, noop],
+  [cmd.Name.REFRESH, WindowCommands.refresh],
   [cmd.Name.ADD_COOKIE, noop],
   [cmd.Name.GET_ALL_COOKIES, noop],
   [cmd.Name.DELETE_ALL_COOKIES, noop],
@@ -162,7 +163,11 @@ class Executor {
       }
 
       return res;
-    });
+    })
+      .catch(e => {
+        this.log_.severe(`operation rejected with ${e.toString()}`);
+        throw e;
+      });
   }
 }
 

@@ -20,6 +20,7 @@ require('./spec/extension/navigation_tracker_spec.js');
 require('./spec/extension/session_commands_spec.js');
 require('./spec/extension/session_spec.js');
 require('./spec/extension/tab_spec.js');
+require('./spec/extension/window_commands_spec.js');
 
 require('./e2e.js');
 

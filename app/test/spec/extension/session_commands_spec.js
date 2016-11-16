@@ -37,7 +37,7 @@ describe('extension', () => {
           expect(result).to.have.property('sessionId');
           expect(result).to.have.property('capabilities');
 
-          expect(sessions.findSession(result.sessionId).sessionId).to.equal(result.sessionid);
+          expect(sessions.findSession(result.sessionId).getId()).to.equal(result.sessionId);
         });
     });
 

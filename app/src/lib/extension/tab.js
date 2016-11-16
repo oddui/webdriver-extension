@@ -2,6 +2,8 @@
 
 
 const logging = require('selenium-webdriver/lib/logging'),
+  error = require('selenium-webdriver/lib/error'),
+  promise = require('selenium-webdriver/lib/promise'),
   Debugger = require('./debugger'),
   FrameTracker = require('./frame_tracker'),
   JavaScriptDialogManager = require('./javascript_dialog_manager'),
@@ -49,6 +51,10 @@ class Tab {
     return this.id_;
   }
 
+  getJavaScriptDialogManager() {
+    return this.dialogManager_;
+  }
+
   connectIfNecessary() {
     if (this.debugger_.isConnected()) {
       return Promise.resolve();
@@ -75,6 +81,31 @@ class Tab {
         configuration: 'mobile'
       })
     ]);
+  }
+
+  isPendingNavigation(frameId) {
+    return this.navigationTracker_.isPendingNavigation(frameId);
+  }
+
+  isNotPendingNavigation(frameId) {
+    return this.isPendingNavigation(frameId)
+      .then(pending => !pending);
+  }
+
+  waitForPendingNavigation(frameId, timeout, stopLoadOnTimeout) {
+    this.log_.finer('Waiting for pending navigations...');
+
+    return promise.controlFlow()
+      .wait(() => this.isNotPendingNavigation(), timeout, 'Waiting for pending navigations timed out.')
+      .catch(e => {
+        // TODO: use error.TimeoutError once upgraded selenium-webdriver to version 3
+        if (e instanceof Error && stopLoadOnTimeout) {
+          this.log_.finer('Timed out. Stopping navigation...');
+          // TODO: stop navigation
+        }
+        throw e;
+      })
+      .then(() => this.log_.finer('Done waiting for pending navigations.'));
   }
 
   load(url, timeout) {

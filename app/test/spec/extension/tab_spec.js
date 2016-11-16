@@ -2,6 +2,7 @@
 
 const expect = require('chai').expect,
   sinon = require('sinon'),
+  error = require('selenium-webdriver/lib/error'),
   FakeDebugger = require('./fake_debugger'),
   PageLoadStrategy = require('../../../src/lib/extension/navigation_tracker').PageLoadStrategy,
   Tab = require('../../../src/lib/extension/tab');
@@ -73,6 +74,56 @@ describe('extension', () => {
         expect(dbg.sendCommand.calledWith('Network.enable')).to.be.true;
         expect(dbg.sendCommand.calledWith('Network.setUserAgentOverride')).to.be.true;
         expect(dbg.sendCommand.calledWith('Emulation.setTouchEmulationEnabled')).to.be.true;
+      });
+    });
+
+    describe('pending navigation', () => {
+      beforeEach(() => {
+        sinon.stub(tab.navigationTracker_, 'isPendingNavigation')
+          .returns(Promise.resolve(false));
+
+        return tab.connectIfNecessary();
+      });
+
+      describe('isPendingNavigation', () => {
+        it('whether the tabs is pending navigation', () => {
+          return tab.isPendingNavigation()
+            .then(pending => {
+              expect(pending).to.be.false;
+              expect(tab.navigationTracker_.isPendingNavigation.calledOnce).to.be.true;
+            });
+        });
+      });
+
+      describe('isNotPendingNavigation', () => {
+        it('whether the tabs is not pending navigation', () => {
+          return tab.isNotPendingNavigation()
+            .then(notPending => {
+              expect(notPending).to.be.true;
+              expect(tab.navigationTracker_.isPendingNavigation.calledOnce).to.be.true;
+            });
+        });
+      });
+
+      describe('waitForPendingNavigation', () => {
+        const n = 3;
+
+        beforeEach(() => {
+          for(let i = 0; i < n; i++) {
+            tab.navigationTracker_.isPendingNavigation.onCall(i).returns(Promise.resolve(true));
+          }
+        });
+
+        it('polls pending status until is not pending', () => {
+          return tab.waitForPendingNavigation()
+            .then(() => expect(tab.navigationTracker_.isPendingNavigation.callCount).to.equal(n + 1));
+        });
+
+        it('times out', () => {
+          return tab.waitForPendingNavigation(null, 1)
+            // TODO: expect error.TimeoutError once upgraded selenium-webdriver to version 3
+            .catch(e => expect(e).to.be.instanceOf(Error));
+        });
       });
     });
 

@@ -1,8 +1,8 @@
 language: node_js
 node_js:
-  - "4"
-  - "4.2"
-  - "node"
+  - 6
+  - 6.9
+  - node
 dist: trusty
 script:
   - npm run unit

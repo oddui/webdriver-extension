@@ -7,7 +7,7 @@ const webdriver = require('../src/lib/index'),
   Builder = webdriver.Builder;
 
 
-describe('e2e', function() {
+describe('e2e', () => {
   let builder;
 
   if (!process.browser) {
@@ -15,15 +15,15 @@ describe('e2e', function() {
     return;
   }
 
-  before(function() {
+  before(() => {
     webdriver.logging.installConsoleHandler();
 
-    ['webdriver.extension', 'webdriver.http'].forEach(function(name) {
+    ['webdriver.extension', 'webdriver.http'].forEach(name => {
       webdriver.logging.getLogger(name).setLevel(webdriver.logging.Level.ALL);
     });
   });
 
-  beforeEach(function() {
+  beforeEach(() => {
     // chrome specific options/capabilities
     let chromeOptions = new chrome.Options()
       .setMobileEmulation({deviceName: 'Google Nexus 5'});
@@ -34,45 +34,32 @@ describe('e2e', function() {
   });
 
 
-  describe('extension', function() {
-    let driver;
+  ['extension', 'http'].forEach(type => {
+    describe(type, () => {
+      let driver;
 
-    beforeEach(function() {
-      driver = builder.build();
-    });
+      beforeEach(() => {
+        if (type === 'http') {
+          // manually started webdriver server
+          builder.usingServer('http://127.0.0.1:9515');
+        }
+        driver = builder.build();
+      });
 
-    afterEach(function() {
-      return driver.quit();
-    });
+      afterEach(() => driver.quit());
 
-    it('should append query to title', function() {
-      driver.get('http://www.google.com/ncr');
-      driver.findElement(By.name('q')).sendKeys('webdriver');
-      driver.findElement(By.name('btnG')).click();
-      return driver.wait(until.titleIs('webdriver - Google Search'), 5000);
-    });
-  });
+      it('should append query to title', () => {
+        driver.get('http://www.google.com/ncr');
+        driver.findElement(By.name('q')).sendKeys('webdriver');
+        driver.findElement(By.name('btnG')).click();
+        return driver.wait(until.titleIs('webdriver - Google Search'), 5000);
+      });
 
-
-  describe('http', function() {
-    let driver;
-
-    beforeEach(function() {
-      // manually started webdriver server
-      builder.usingServer('http://127.0.0.1:9515');
-      driver = builder.build();
-    });
-
-    afterEach(function() {
-      return driver.quit();
-    });
-
-    it('should append query to title', function() {
-      driver.get('http://www.google.com/ncr');
-      driver.findElement(By.name('q')).sendKeys('webdriver');
-      driver.findElement(By.name('btnG')).click();
-      return driver.wait(until.titleIs('webdriver - Google Search'), 5000);
+      it('throws if blocking dialog', () => {
+        // TODO: fix different behaviours between extension and http
+        driver.get('http://127.0.0.1:8080/pageWithOnLoad.html');
+        return driver.navigate().refresh();
+      });
     });
   });
-
 });

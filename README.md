@@ -20,3 +20,7 @@ file changes and notifies the extension to reload.
 
 Run units tests in node `npm test`. Or run inside the extension by
 clicking the browser action button.
+
+e2e tests only run inside the extension. You will need to start
+ChromeDriver and a web server to serve the files in `app/test/web` on
+port `8080`.

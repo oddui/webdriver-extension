@@ -98,8 +98,7 @@ class Tab {
     return promise.controlFlow()
       .wait(() => this.isNotPendingNavigation(), timeout, 'Waiting for pending navigations timed out.')
       .catch(e => {
-        // TODO: use error.TimeoutError once upgraded selenium-webdriver to version 3
-        if (e instanceof Error && stopLoadOnTimeout) {
+        if (e instanceof error.TimeoutError && stopLoadOnTimeout) {
           this.log_.finer('Timed out. Stopping navigation...');
           // TODO: stop navigation
         }

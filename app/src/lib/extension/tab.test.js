@@ -121,8 +121,7 @@ describe('extension', () => {
 
         it('times out', () => {
           return tab.waitForPendingNavigation(null, 1)
-            // TODO: expect error.TimeoutError once upgraded selenium-webdriver to version 3
-            .catch(e => expect(e).to.be.instanceOf(Error));
+            .catch(e => expect(e).to.be.instanceOf(error.TimeoutError));
         });
       });
     });

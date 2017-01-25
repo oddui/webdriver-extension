@@ -49,16 +49,16 @@ describe('e2e', () => {
       afterEach(() => driver.quit());
 
       it('should append query to title', () => {
-        driver.get('http://www.google.com/ncr');
-        driver.findElement(By.name('q')).sendKeys('webdriver');
-        driver.findElement(By.name('btnG')).click();
-        return driver.wait(until.titleIs('webdriver - Google Search'), 5000);
+        return driver.get('http://www.google.com/ncr')
+          .then(() => driver.findElement(By.name('q')).sendKeys('webdriver'))
+          .then(() => driver.findElement(By.name('btnG')).click())
+          .then(() => driver.wait(until.titleIs('webdriver - Google Search'), 5000));
       });
 
       it('throws if blocking dialog', () => {
         // TODO: fix different behaviours between extension and http
-        driver.get('http://127.0.0.1:8080/pageWithOnLoad.html');
-        return driver.navigate().refresh();
+        return driver.get('http://127.0.0.1:8080/pageWithOnLoad.html')
+          .then(() => driver.navigate().refresh());
       });
     });
   });

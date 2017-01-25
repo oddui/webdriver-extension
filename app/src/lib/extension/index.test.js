@@ -4,7 +4,7 @@ const expect = require('chai').expect,
   cmd = require('selenium-webdriver/lib/command'),
   error = require('selenium-webdriver/lib/error'),
   fakeChromeApi = require('./fake_chrome_api'),
-  Executor = require('../../../src/lib/extension').Executor;
+  Executor = require('./index').Executor;
 
 
 describe('extension', function() {

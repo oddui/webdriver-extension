@@ -4,8 +4,8 @@ const expect = require('chai').expect,
   sinon = require('sinon'),
   error = require('selenium-webdriver/lib/error'),
   FakeDebugger = require('./fake_debugger'),
-  PageLoadStrategy = require('../../../src/lib/extension/navigation_tracker').PageLoadStrategy,
-  Tab = require('../../../src/lib/extension/tab');
+  PageLoadStrategy = require('./navigation_tracker').PageLoadStrategy,
+  Tab = require('./tab');
 
 
 describe('extension', () => {

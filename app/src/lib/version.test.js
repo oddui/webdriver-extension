@@ -1,6 +1,6 @@
 var expect = require('chai').expect,
   semver = require('semver'),
-  version = require('../../src/lib/version');
+  version = require('./version');
 
 describe('version', function() {
   it('is SemVer', function() {

@@ -3,7 +3,7 @@
 const expect = require('chai').expect,
   error = require('selenium-webdriver/lib/error'),
   fakeChromeApi = require('./fake_chrome_api'),
-  sessions = require('../../../src/lib/extension/session'),
+  sessions = require('./session'),
   Session = sessions.Session,
   FrameInfo = sessions.FrameInfo,
   addSession = sessions.addSession,
@@ -94,7 +94,7 @@ describe('extension', () => {
     });
 
     describe('page load strategy', () => {
-      const PageLoadStrategy = require('../../../src/lib/extension/navigation_tracker').PageLoadStrategy;
+      const PageLoadStrategy = require('./navigation_tracker').PageLoadStrategy;
 
       it('is normal by default', () => {
         expect(session.getPageLoadStrategy()).to.equal(PageLoadStrategy.NORMAL);

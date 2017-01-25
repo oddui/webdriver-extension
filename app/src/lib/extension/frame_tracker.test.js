@@ -4,7 +4,7 @@ const expect = require('chai').expect,
   sinon = require('sinon'),
   error = require('selenium-webdriver/lib/error'),
   FakeDebugger = require('./fake_debugger'),
-  FrameTracker = require('../../../src/lib/extension/frame_tracker');
+  FrameTracker = require('./frame_tracker');
 
 
 describe('extension', () => {

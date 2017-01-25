@@ -4,7 +4,7 @@ const expect = require('chai').expect,
   sinon = require('sinon'),
   error = require('selenium-webdriver/lib/error'),
   FakeDebugger = require('./fake_debugger'),
-  JavaScriptDialogManager = require('../../../src/lib/extension/javascript_dialog_manager');
+  JavaScriptDialogManager = require('./javascript_dialog_manager');
 
 
 describe('extension', () => {

@@ -7,20 +7,20 @@ mocha.setup({
   timeout: 20000
 });
 
-require('./spec/builder_spec.js');
-require('./spec/chrome_spec.js');
-require('./spec/http_spec.js');
-require('./spec/index_spec.js');
-require('./spec/version_spec.js');
-require('./spec/extension/debugger_spec.js');
-require('./spec/extension/frame_tracker_spec.js');
-require('./spec/extension/index_spec.js');
-require('./spec/extension/javascript_dialog_manager_spec.js');
-require('./spec/extension/navigation_tracker_spec.js');
-require('./spec/extension/session_commands_spec.js');
-require('./spec/extension/session_spec.js');
-require('./spec/extension/tab_spec.js');
-require('./spec/extension/window_commands_spec.js');
+require('../src/lib/builder.test.js');
+require('../src/lib/chrome.test.js');
+require('../src/lib/http.test.js');
+require('../src/lib/index.test.js');
+require('../src/lib/version.test.js');
+require('../src/lib/extension/debugger.test.js');
+require('../src/lib/extension/frame_tracker.test.js');
+require('../src/lib/extension/index.test.js');
+require('../src/lib/extension/javascript_dialog_manager.test.js');
+require('../src/lib/extension/navigation_tracker.test.js');
+require('../src/lib/extension/session_commands.test.js');
+require('../src/lib/extension/session.test.js');
+require('../src/lib/extension/tab.test.js');
+require('../src/lib/extension/window_commands.test.js');
 
 require('./e2e.js');
 

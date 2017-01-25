@@ -6,7 +6,7 @@ const expect = require('chai').expect,
   capabilities = require('selenium-webdriver/lib/capabilities'),
   Capabilities = capabilities.Capabilities,
   Capability = capabilities.Capability,
-  chrome = require('../../src/lib/chrome'),
+  chrome = require('./chrome'),
   Options = chrome.Options;
 
 

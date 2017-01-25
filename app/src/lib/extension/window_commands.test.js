@@ -3,10 +3,8 @@
 const expect = require('chai').expect,
   error = require('selenium-webdriver/lib/error'),
   fakeChromeApi = require('./fake_chrome_api'),
-  sessions = require('../../../src/lib/extension/session'),
-  WindowCommands = require('../../../src/lib/extension/window_commands'),
-  go = WindowCommands.go,
-  refresh = WindowCommands.refresh;
+  sessions = require('./session'),
+  { go, refresh } = require('./window_commands');
 
 
 describe('extension', () => {

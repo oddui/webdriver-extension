@@ -3,7 +3,7 @@
 const expect = require('chai').expect,
   sinon = require('sinon'),
   capabilities = require('selenium-webdriver/lib/capabilities'),
-  Builder = require('../../src/lib/builder').Builder;
+  Builder = require('./builder').Builder;
 
 
 describe('Builder', function() {

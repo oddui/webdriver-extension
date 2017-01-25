@@ -4,7 +4,7 @@ const expect = require('chai').expect,
   sinon = require('sinon'),
   fakeChromeApi = require('./fake_chrome_api'),
   error = require('selenium-webdriver/lib/error'),
-  Debugger = require('../../../src/lib/extension/debugger');
+  Debugger = require('./debugger');
 
 
 describe('extension', () => {

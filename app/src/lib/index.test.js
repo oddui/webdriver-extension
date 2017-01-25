@@ -1,5 +1,5 @@
 var expect = require('chai').expect,
-  index = require('../../src/lib/index');
+  index = require('./index');
 
 describe('index', function() {
   ['version', 'Builder', 'By', 'until', 'logging'].forEach(function(func) {

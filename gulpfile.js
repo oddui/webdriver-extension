@@ -23,15 +23,14 @@ gulp.task('lint', () => {
 
 gulp.task('webpack', (cb) => {
   webpack(require('./webpack.config.js'), (err, stats) => {
-    if(err) {
+    if (err) {
       throw err;
     }
+
     gutil.log('[webpack]', stats.toString({
-      colors: gutil.colors.supportsColor,
-      chunks: false,
-      chunkModules: false,
-      hash: false
+      colors: gutil.colors.supportsColor
     }));
+
     cb();
   });
 });

@@ -25,11 +25,10 @@
     "gulp-zip": "^3.2.0",
     "istanbul": "^0.4.3",
     "jsdoc": "^3.4.0",
-    "json-loader": "^0.5.4",
     "mocha": "^3.2.0",
     "run-sequence": "^1.1.5",
     "sinon": "2.0.0-pre.5",
-    "webpack": "^1.13.1"
+    "webpack": "^3.0.0"
   },
   "dependencies": {
     "lodash": "^4.16.5",

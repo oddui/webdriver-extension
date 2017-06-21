@@ -6,9 +6,6 @@ const Path = {
   test: path.join(__dirname, 'app/test'),
   output: path.join(__dirname, 'app/bundles')
 };
-const loaders = [
-  { test: /\.json$/, loader: 'json' }
-];
 
 module.exports = [
   {
@@ -18,9 +15,6 @@ module.exports = [
       filename: 'lib.js',
       library: 'webdriver-extension',
       libraryTarget: 'umd'
-    },
-    module: {
-      loaders: loaders
     }
   },
   {
@@ -28,9 +22,6 @@ module.exports = [
     output: {
       path: Path.output,
       filename: 'test.js'
-    },
-    module: {
-      loaders: loaders
     },
 
     // When importing a module whose path matches one of the following, just

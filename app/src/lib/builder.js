@@ -1,14 +1,12 @@
 'use strict';
 
-const capabilities = require('selenium-webdriver/lib/capabilities');
-const webdriver = require('selenium-webdriver/lib/webdriver');
-const http = require('./http');
-const chrome = require('./chrome');
-
-const Browser = capabilities.Browser;
-const Capabilities = capabilities.Capabilities;
-const Capability = capabilities.Capability;
-const WebDriver = webdriver.WebDriver;
+const chrome = require('./chrome'),
+  extension = require('./extension'),
+  http = require('./http'),
+  logging = require('selenium-webdriver/lib/logging'),
+  promise = require('selenium-webdriver/lib/promise'),
+  {Browser, Capabilities, Capability} = require('selenium-webdriver/lib/capabilities'),
+  {WebDriver} = require('selenium-webdriver/lib/webdriver');
 
 
 /**
@@ -30,10 +28,84 @@ function ensureFileDetectorsAreEnabled(ctor) {
   const mixin = class extends ctor {
     /** @param {input.FileDetector} detector */
     setFileDetector(detector) {
-      webdriver.WebDriver.prototype.setFileDetector.call(this, detector);
+      WebDriver.prototype.setFileDetector.call(this, detector);
     }
   };
   return mixin;
+}
+
+
+/**
+ * A thenable wrapper around a {@linkplain webdriver.IWebDriver IWebDriver}
+ * instance that allows commands to be issued directly instead of having to
+ * repeatedly call `then`:
+ *
+ *     let driver = new Builder().build();
+ *     driver.then(d => d.get(url));  // You can do this...
+ *     driver.get(url);               // ...or this
+ *
+ * If the driver instance fails to resolve (e.g. the session cannot be created),
+ * every issued command will fail.
+ *
+ * @extends {webdriver.IWebDriver}
+ * @extends {promise.CancellableThenable<!webdriver.IWebDriver>}
+ * @interface
+ */
+class ThenableWebDriver {
+  /** @param {...?} args */
+  static createSession(...args) {}
+}
+
+
+/**
+ * @const {!Map<function(new: WebDriver, !IThenable<!Session>, ...?),
+ *              function(new: ThenableWebDriver, !IThenable<!Session>, ...?)>}
+ */
+const THENABLE_DRIVERS = new Map;
+
+
+/**
+ * @param {function(new: WebDriver, !IThenable<!Session>, ...?)} ctor
+ * @param {...?} args
+ * @return {!ThenableWebDriver}
+ */
+function createDriver(ctor, ...args) {
+  let thenableWebDriverProxy = THENABLE_DRIVERS.get(ctor);
+  if (!thenableWebDriverProxy) {
+    /** @implements {ThenableWebDriver} */
+    thenableWebDriverProxy = class extends ctor {
+      /**
+       * @param {!IThenable<!Session>} session
+       * @param {...?} rest
+       */
+      constructor(session, ...rest) {
+        super(session, ...rest);
+
+        const pd = this.getSession().then(session => {
+          return new ctor(session, ...rest);
+        });
+
+        /**
+         * @param {(string|Error)=} opt_reason
+         * @override
+         */
+        this.cancel = function(opt_reason) {
+          if (promise.CancellableThenable.isImplementation(pd)) {
+            /** @type {!promise.CancellableThenable} */(pd).cancel(opt_reason);
+          }
+        };
+
+        /** @override */
+        this.then = pd.then.bind(pd);
+
+        /** @override */
+        this.catch = pd.then.bind(pd);
+      }
+    }
+    promise.CancellableThenable.addImplementation(thenableWebDriverProxy);
+    THENABLE_DRIVERS.set(ctor, thenableWebDriverProxy);
+  }
+  return thenableWebDriverProxy.createSession(...args);
 }
 
 
@@ -42,6 +114,9 @@ function ensureFileDetectorsAreEnabled(ctor) {
  */
 class Builder {
   constructor() {
+    /** @private @const */
+    this.log_ = logging.getLogger('webdriver.Builder');
+
     /** @private {promise.ControlFlow} */
     this.flow_ = null;
 
@@ -297,15 +372,14 @@ class Builder {
    * Creates a new WebDriver client based on this builder's current
    * configuration.
    *
-   * While this method will immediately return a new WebDriver instance, any
-   * commands issued against it will be deferred until the associated browser
-   * has been fully initialized. Users may call {@link #buildAsync()} to obtain
-   * a promise that will not be fulfilled until the browser has been created
-   * (the difference is purely in style).
+   * This method will return a {@linkplain ThenableWebDriver} instance, allowing
+   * users to issue commands directly without calling `then()`. The returned
+   * thenable wraps a promise that will resolve to a concrete
+   * {@linkplain webdriver.WebDriver WebDriver} instance. The promise will be
+   * rejected if the remote end fails to create a new session.
    *
-   * @return {!webdriver.WebDriver} A new WebDriver instance.
+   * @return {!ThenableWebDriver} A new WebDriver instance.
    * @throws {Error} If the current configuration is invalid.
-   * @see #buildAsync()
    */
   build() {
     // Create a copy for any changes we may need to make based on the current
@@ -315,8 +389,8 @@ class Builder {
 
     if (typeof browser !== 'string') {
       throw TypeError(
-          `Target browser must be a string, but is <${typeof browser}>
-          ; did you forget to call forBrowser()?`);
+          `Target browser must be a string, but is <${typeof browser}>;` +
+          ` did you forget to call forBrowser()?`);
     }
 
     if (browser === 'ie') {
@@ -345,51 +419,39 @@ class Builder {
 
     // Check for a remote browser.
     if (this.url_) {
+      this.log_.fine('Creating session on remote server');
       let client = Promise.resolve(this.url_)
         .then(url => new http.Client(url));
       let executor = new http.Executor(client);
 
       if (browser === Browser.CHROME) {
         const driver = ensureFileDetectorsAreEnabled(chrome.Driver);
-        return new driver(capabilities, executor, this.flow_);
+        return createDriver(
+            driver, capabilities, executor, this.flow_);
       }
 
       if (browser === Browser.FIREFOX) {
         const driver = ensureFileDetectorsAreEnabled(firefox.Driver);
-        return new driver(capabilities, executor, this.flow_);
+        return createDriver(
+            driver, capabilities, executor, this.flow_);
       }
 
-      return WebDriver.createSession(executor, capabilities, this.flow_);
+      return createDriver(
+          WebDriver, executor, capabilities, this.flow_);
     }
 
-    // TODO: Use extension executor
+    // Check for extension.
     if (browser === Browser.CHROME) {
-      throw new Error('Extension executor not implemented.');
+      let executor = new extension.Executor();
+      return createDriver(chrome.Driver, capabilities, executor, this.flow_);
     } else {
       throw new Error(
         `Do not know how to build driver: ${browser}
         ; did you forget to call usingServer(url)?`);
     }
   }
-
-  /**
-   * Creates a new WebDriver client based on this builder's current
-   * configuration. This method returns a promise that will not be fulfilled
-   * until the new browser session has been fully initialized.
-   *
-   * __Note:__ this method is purely a convenience wrapper around
-   * {@link #build()}.
-   *
-   * @return {!promise.Promise<!webdriver.WebDriver>} A promise that will be
-   *    fulfilled with the newly created WebDriver instance once the browser
-   *    has been fully initialized.
-   * @see #build()
-   */
-  buildAsync() {
-    let driver = this.build();
-    return driver.getSession().then(() => driver);
-  }
 }
 
 
 exports.Builder = Builder;
+exports.ThenableWebDriver = ThenableWebDriver;

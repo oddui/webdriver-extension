@@ -6,46 +6,60 @@ const webdriver = require('../src/lib/index'),
   until = webdriver.until,
   Builder = webdriver.Builder;
 
-if (process.browser) {
-  // only run in browser
-  run();
-}
 
-function run() {
+describe('e2e', () => {
+  let builder;
 
-  // chrome specific options/capabilities
-  let chromeOptions = new chrome.Options()
-    .setMobileEmulation({deviceName: 'Google Nexus 5'});
+  if (!process.browser) {
+    // only run in browser
+    return;
+  }
 
+  before(() => {
+    webdriver.logging.installConsoleHandler();
 
-  let driver = new Builder()
-
-    .forBrowser('chrome')
-    .setChromeOptions(chromeOptions)
-
-    //.forBrowser('firefox')
-    //.forBrowser('safari')
-
-    // manually started webdriver servers
-    .usingServer('http://127.0.0.1:4444/wd/hub')
-    .usingServer('http://127.0.0.1:9515')
-
-    .build();
-
-
-  let message = [];
-  driver.call(message.push, message, 'a').then(function() {
-    driver.call(message.push, message, 'b');
+    ['webdriver.extension', 'webdriver.http'].forEach(name => {
+      webdriver.logging.getLogger(name).setLevel(webdriver.logging.Level.ALL);
+    });
   });
-  driver.call(message.push, message, 'c');
-  driver.call(function() {
-    console.log('message is abc? ' + (message.join('') === 'abc'));
+
+  beforeEach(() => {
+    // chrome specific options/capabilities
+    let chromeOptions = new chrome.Options()
+      .setMobileEmulation({deviceName: 'Google Nexus 5'});
+
+    builder = new Builder()
+      .forBrowser('chrome')
+      .setChromeOptions(chromeOptions);
   });
 
 
-  driver.get('http://www.google.com/ncr');
-  driver.findElement(By.name('q')).sendKeys('webdriver');
-  driver.findElement(By.name('btnG')).click();
-  driver.wait(until.titleIs('webdriver - Google Search'), 5000);
-  driver.quit();
-}
+  ['extension', 'http'].forEach(type => {
+    describe(type, () => {
+      let driver;
+
+      beforeEach(() => {
+        if (type === 'http') {
+          // manually started webdriver server
+          builder.usingServer('http://127.0.0.1:9515');
+        }
+        driver = builder.build();
+      });
+
+      afterEach(() => driver.quit());
+
+      it('should append query to title', () => {
+        return driver.get('http://www.google.com/ncr')
+          .then(() => driver.findElement(By.name('q')).sendKeys('webdriver'))
+          .then(() => driver.findElement(By.name('btnG')).click())
+          .then(() => driver.wait(until.titleIs('webdriver - Google Search'), 5000));
+      });
+
+      it('throws if blocking dialog', () => {
+        // TODO: fix different behaviours between extension and http
+        return driver.get('http://127.0.0.1:8080/pageWithOnLoad.html')
+          .then(() => driver.navigate().refresh());
+      });
+    });
+  });
+});

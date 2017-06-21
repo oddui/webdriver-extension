@@ -3,13 +3,13 @@
   "version": "0.0.1",
   "private": true,
   "engines": {
-    "node": ">=4.2.0"
+    "node": ">=6.9.0"
   },
   "scripts": {
     "docs": "jsdoc -c ./jsdoc.json",
     "test": "npm run unit",
-    "unit": "mocha app/test/spec",
-    "coverage": "istanbul cover _mocha -- app/test/spec",
+    "unit": "mocha 'app/src/**/*.test.js'",
+    "coverage": "istanbul cover _mocha -- 'app/src/**/*.test.js'",
     "coveralls": "npm run coverage && cat ./coverage/lcov.info | coveralls"
   },
   "devDependencies": {
@@ -26,13 +26,14 @@
     "istanbul": "^0.4.3",
     "jsdoc": "^3.4.0",
     "json-loader": "^0.5.4",
-    "mocha": "^3.0.2",
+    "mocha": "^3.2.0",
     "run-sequence": "^1.1.5",
-    "sinon": "2.0.0-pre.2",
+    "sinon": "2.0.0-pre.5",
     "webpack": "^1.13.1"
   },
   "dependencies": {
-    "selenium-webdriver": "3.0.0-beta-2",
+    "lodash": "^4.16.5",
+    "selenium-webdriver": "^3.1.0",
     "semver": "^5.1.0"
   }
 }

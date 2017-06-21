@@ -51,13 +51,10 @@
 
 'use strict';
 
-const capabilities = require('selenium-webdriver/lib/capabilities'),
-  Capabilities = capabilities.Capabilities,
-  Capability = capabilities.Capability,
+const {Capabilities, Capability} = require('selenium-webdriver/lib/capabilities'),
   Symbols = require('selenium-webdriver/lib/symbols'),
   command = require('selenium-webdriver/lib/command'),
-  webdriver = require('selenium-webdriver/lib/webdriver'),
-  http = require('./http');
+  webdriver = require('selenium-webdriver/lib/webdriver');
 
 
 /**
@@ -475,20 +472,21 @@ function configureExecutor(executor) {
  * Creates a new WebDriver client for Chrome.
  */
 class Driver extends webdriver.WebDriver {
+
   /**
-   * @param {(Capabilities|Options)=} opt_config The configuration
-   *     options.
-   * @param {http.Executor} executor A pre-configured command executor that
-   *     should be used to send commands to the remote end. The provided
-   *     executor should not be reused with other clients as its internal
-   *     command mappings will be updated to support Chrome-specific commands.
-   * @param {promise.ControlFlow=} opt_flow The control flow to use,
-   *     or {@code null} to use the currently active flow.
+   * Creates a new session with the ChromeDriver.
+   *
+   * @param {(Capabilities|Options)=} opt_config The configuration options.
+   * @param {Executor} executor A preconfigured executor for an externally
+   *     managed endpoint.
+   * @param {promise.ControlFlow=} opt_flow The control flow to use, or `null`
+   *     to use the currently active flow.
+   * @return {!Driver} A new driver instance.
    */
-  constructor(opt_config, executor, opt_flow) {
-    if (executor instanceof http.Executor) {
+  static createSession(opt_config, executor, opt_flow) {
+    try {
       configureExecutor(executor);
-    } else {
+    } catch(e) {
       throw Error('Invalid executor.');
     }
 
@@ -496,9 +494,8 @@ class Driver extends webdriver.WebDriver {
         opt_config instanceof Options ? opt_config.toCapabilities() :
         (opt_config || Capabilities.chrome());
 
-    let driver = webdriver.WebDriver.createSession(executor, caps, opt_flow);
-
-    super(driver.getSession(), executor, driver.controlFlow());
+    return /** @type {!Driver} */(
+        webdriver.WebDriver.createSession(executor, caps, opt_flow, this));
   }
 
   /**
@@ -511,7 +508,7 @@ class Driver extends webdriver.WebDriver {
   /**
    * Schedules a command to launch Chrome App with given ID.
    * @param {string} id ID of the App to launch.
-   * @return {!promise.Promise<void>} A promise that will be resolved
+   * @return {!promise.Thenable<void>} A promise that will be resolved
    *     when app is launched.
    */
   launchApp(id) {

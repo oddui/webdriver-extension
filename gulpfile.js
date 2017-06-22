@@ -72,7 +72,6 @@ gulp.task('extras', () => {
     'app/images/**',
     'app/bundles/*',
     'app/test/*',
-    '!app/node_modules',
     '!app/*.json'
   ], {
     base: 'app',

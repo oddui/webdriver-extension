@@ -35,10 +35,16 @@ gulp.task('webpack', (cb) => {
   });
 });
 
-gulp.task('watch', ['lint', 'webpack'], () => {
+gulp.task('scripts', ['webpack'], () => {
+  return gulp.src('app/src/*.js')
+    .pipe(gulp.dest('app/scripts'));
+});
+
+gulp.task('watch', ['lint', 'scripts'], () => {
   livereload.listen();
 
   gulp.watch([
+    'app/scripts/**/*.js',
     'app/images/**/*',
     'app/_locales/**/*.json'
   ]).on('change', livereload.reload);
@@ -46,22 +52,22 @@ gulp.task('watch', ['lint', 'webpack'], () => {
   gulp.watch([
     'app/src/**/*.js',
     'app/test/**/*.js'
-  ], ['lint', 'webpack']);
+  ], ['lint', 'scripts']);
 });
 
 gulp.task('manifest', () => {
   let manifestOpts = {
     buildnumber: false,
     background: {
-      target: 'src/background.js',
+      target: 'scripts/background.js',
       exclude: [
-        'src/chromereload.js'
+        'scripts/chromereload.js'
       ]
     }
   };
   return gulp.src('app/manifest.json')
-  .pipe(manifest(manifestOpts))
-  .pipe(gulp.dest('dist'));
+    .pipe(manifest(manifestOpts))
+    .pipe(gulp.dest('dist'));
 });
 
 gulp.task('extras', () => {
@@ -71,6 +77,7 @@ gulp.task('extras', () => {
     'app/images/**',
     'app/scripts/*',
     'app/test/*',
+    '!app/src',
     '!app/*.json'
   ], {
     base: 'app',
@@ -82,7 +89,7 @@ gulp.task('extras', () => {
 
 gulp.task('build', (cb) => {
   runSequence(
-    'lint', 'webpack',
+    'lint', 'scripts',
     ['manifest', 'extras'], cb);
 });
 

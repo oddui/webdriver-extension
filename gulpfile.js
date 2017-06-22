@@ -11,6 +11,8 @@ const runSequence = require('run-sequence');
 const webpack = require('webpack');
 const zip = require('gulp-zip');
 
+const webpackConfig = require('./webpack.config.js');
+
 gulp.task('lint', () => {
   return gulp.src([
     'app/src/**/*.js',
@@ -22,13 +24,14 @@ gulp.task('lint', () => {
   .pipe(eslint.format());
 });
 
-gulp.task('webpack', (cb) => {
-  webpack(require('./webpack.config.js'), (err, stats) => {
+gulp.task('webpack-background', (cb) => {
+
+  webpack(webpackConfig.background, (err, stats) => {
     if (err) {
       throw err;
     }
 
-    gutil.log('[webpack]', stats.toString({
+    gutil.log('[webpack-background]', stats.toString({
       colors: gutil.colors.supportsColor
     }));
 
@@ -36,8 +39,22 @@ gulp.task('webpack', (cb) => {
   });
 });
 
-gulp.task('scripts', ['webpack'], () => {
-  return gulp.src('app/src/*.js')
+gulp.task('webpack-test', (cb) => {
+  webpack(webpackConfig.test, (err, stats) => {
+    if (err) {
+      throw err;
+    }
+
+    gutil.log('[webpack-test]', stats.toString({
+      colors: gutil.colors.supportsColor
+    }));
+
+    cb();
+  });
+});
+
+gulp.task('scripts', ['webpack-background', 'webpack-test'], () => {
+  return gulp.src('app/src/chromereload.js')
     .pipe(gulp.dest('app/scripts'));
 });
 
@@ -50,10 +67,8 @@ gulp.task('watch', ['lint', 'scripts'], () => {
     'app/_locales/**/*.json'
   ]).on('change', livereload.reload);
 
-  gulp.watch([
-    'app/src/**/*.js',
-    'app/test/**/*.js'
-  ], ['lint', 'scripts']);
+  gulp.watch('app/src/**/*.js', ['lint', 'webpack-background']);
+  gulp.watch('app/test/**/*.js', ['lint', 'webpack-test']);
 });
 
 gulp.task('manifest', () => {

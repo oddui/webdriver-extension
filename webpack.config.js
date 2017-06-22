@@ -2,26 +2,25 @@
 
 const path = require('path');
 const Path = {
-  lib: path.join(__dirname, 'app/src/lib'),
-  test: path.join(__dirname, 'app/test'),
-  output: path.join(__dirname, 'app/scripts')
+  app: path.resolve(__dirname, 'app'),
+  output: path.resolve(__dirname, 'app/scripts')
 };
 
-module.exports = [
-  {
-    entry: Path.lib,
+module.exports = {
+  background: {
+    context: Path.app,
+    entry: './src/background.js',
     output: {
       path: Path.output,
-      filename: 'lib.js',
-      library: 'webdriver-extension',
-      libraryTarget: 'umd'
+      filename: 'background.js'
     }
   },
-  {
-    entry: Path.test,
+  test: {
+    context: Path.app,
+    entry: './test/index.js',
     output: {
       path: Path.output,
       filename: 'test.js'
     }
   }
-];
+};

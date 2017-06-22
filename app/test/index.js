@@ -1,6 +1,9 @@
 'use strict';
 
-const mocha = require('mocha');
+require('style-loader!css-loader!mocha/mocha.css');
+require('mocha/mocha.js');
+
+const mocha = global.mocha;
 
 mocha.setup({
   ui: 'bdd',

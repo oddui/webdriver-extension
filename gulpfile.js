@@ -39,7 +39,7 @@ gulp.task('watch', ['lint', 'webpack'], () => {
   livereload.listen();
 
   gulp.watch([
-    'app/bundles/test.js',
+    'app/scripts/test.js',
     'app/images/**/*',
     'app/_locales/**/*.json'
   ]).on('change', livereload.reload);
@@ -70,7 +70,7 @@ gulp.task('extras', () => {
     'app/*',
     'app/_locales/**',
     'app/images/**',
-    'app/bundles/*',
+    'app/scripts/*',
     'app/test/*',
     '!app/*.json'
   ], {
@@ -88,7 +88,7 @@ gulp.task('build', (cb) => {
 });
 
 gulp.task('clean', () => {
-  return del(['dist', 'app/bundles']).then(paths =>
+  return del(['dist', 'app/scripts']).then(paths =>
     paths.forEach(path => gutil.log('deleted:', gutil.colors.blue(path)))
   );
 });

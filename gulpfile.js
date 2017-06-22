@@ -39,7 +39,6 @@ gulp.task('watch', ['lint', 'webpack'], () => {
   livereload.listen();
 
   gulp.watch([
-    'app/scripts/test.js',
     'app/images/**/*',
     'app/_locales/**/*.json'
   ]).on('change', livereload.reload);

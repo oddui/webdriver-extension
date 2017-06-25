@@ -19,6 +19,50 @@ describe('extension', () => {
     beforeEach(() => dbg = new Debugger());
 
 
+    describe('is event emitter', () => {
+      let EVENT = 'some event', spy;
+
+      beforeEach(() => {
+        spy = sinon.spy()
+        return dbg.connect(tab.id);
+      });
+      afterEach(() => dbg.disconnect());
+
+      it('on', () => {
+        dbg.on(EVENT, spy);
+        dbg.emit(EVENT);
+        expect(spy.calledOnce).to.be.true;
+      });
+
+      it('once', () => {
+        dbg.once(EVENT, spy);
+        dbg.emit(EVENT);
+        dbg.emit(EVENT);
+        expect(spy.calledOnce).to.be.true;
+      });
+
+      it('off', () => {
+        dbg.on(EVENT, spy);
+        dbg.off(EVENT, spy);
+        dbg.emit(EVENT);
+        expect(spy.called).to.be.false;
+      });
+
+      it('onCommandSuccess', () => {
+        dbg.onCommandSuccess(spy);
+        dbg.emit('commandSuccess');
+        expect(spy.calledOnce).to.be.true;
+      });
+
+      it('offCommandSuccess', () => {
+        dbg.onCommandSuccess(spy);
+        dbg.offCommandSuccess(spy);
+        dbg.emit('commandSuccess');
+        expect(spy.called).to.be.false;
+      });
+    });
+
+
     describe('isConnected', () => {
       it('returns true if connected', () => {
         return dbg.connect(tab.id)

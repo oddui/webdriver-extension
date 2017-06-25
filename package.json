@@ -1,7 +1,6 @@
 {
   "name": "webdriver-extension",
-  "version": "0.0.1",
-  "private": true,
+  "version": "1.0.1",
   "engines": {
     "node": ">=6.9.0"
   },
@@ -15,6 +14,7 @@
   "devDependencies": {
     "chai": "^3.5.0",
     "coveralls": "^2.11.9",
+    "css-loader": "^0.28.4",
     "del": "^2.2.0",
     "gulp": "^3.9.1",
     "gulp-chrome-manifest": "0.0.13",
@@ -25,11 +25,11 @@
     "gulp-zip": "^3.2.0",
     "istanbul": "^0.4.3",
     "jsdoc": "^3.4.0",
-    "json-loader": "^0.5.4",
-    "mocha": "^3.2.0",
+    "mocha": "^3.4.2",
     "run-sequence": "^1.1.5",
-    "sinon": "2.0.0-pre.5",
-    "webpack": "^1.13.1"
+    "sinon": "^2.3.5",
+    "style-loader": "^0.18.2",
+    "webpack": "^3.0.0"
   },
   "dependencies": {
     "lodash": "^4.16.5",

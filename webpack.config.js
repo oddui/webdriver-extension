@@ -2,42 +2,25 @@
 
 const path = require('path');
 const Path = {
-  lib: path.join(__dirname, 'app/src/lib'),
-  test: path.join(__dirname, 'app/test'),
-  output: path.join(__dirname, 'app/bundles')
+  app: path.resolve(__dirname, 'app'),
+  output: path.resolve(__dirname, 'app/scripts')
 };
-const loaders = [
-  { test: /\.json$/, loader: 'json' }
-];
 
-module.exports = [
-  {
-    entry: Path.lib,
+module.exports = {
+  background: {
+    context: Path.app,
+    entry: './src/background.js',
     output: {
       path: Path.output,
-      filename: 'lib.js',
-      library: 'webdriver-extension',
-      libraryTarget: 'umd'
-    },
-    module: {
-      loaders: loaders
+      filename: 'background.js'
     }
   },
-  {
-    entry: Path.test,
+  test: {
+    context: Path.app,
+    entry: './test/index.js',
     output: {
       path: Path.output,
       filename: 'test.js'
-    },
-    module: {
-      loaders: loaders
-    },
-
-    // When importing a module whose path matches one of the following, just
-    // assume a corresponding global variable exists and use that instead.
-    externals: {
-      'mocha': 'mocha',
-      'sinon': 'sinon'
     }
   }
-];
+};

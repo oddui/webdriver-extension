@@ -1,7 +1,6 @@
-/coverage
-/dist
-/docs/gen
-/node_modules
-/package
-
-bundles
+app/scripts
+coverage
+dist
+docs/gen
+node_modules
+package

@@ -62,7 +62,7 @@ class Debugger extends EventEmitter {
       throw new Error('connect() must be called before attempting to listen to events.');
     }
 
-    super.off(eventName, cb);
+    super.removeListener(eventName, cb);
   }
 
   onCommandSuccess(cb) {
@@ -78,7 +78,7 @@ class Debugger extends EventEmitter {
       throw new Error('connect() must be called before attempting to listen to events.');
     }
 
-    super.off('commandSuccess', cb);
+    super.removeListener('commandSuccess', cb);
   }
 
   sendCommand(command, params, timeout) {

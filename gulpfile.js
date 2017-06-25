@@ -11,59 +11,79 @@ const runSequence = require('run-sequence');
 const webpack = require('webpack');
 const zip = require('gulp-zip');
 
+const webpackConfig = require('./webpack.config.js');
+
 gulp.task('lint', () => {
   return gulp.src([
     'app/src/**/*.js',
     'app/test/**/*.js',
+    '!app/test/web/**',
     'gulpfile.js'
   ])
   .pipe(eslint())
   .pipe(eslint.format());
 });
 
-gulp.task('webpack', (cb) => {
-  webpack(require('./webpack.config.js'), (err, stats) => {
-    if(err) {
+gulp.task('webpack-background', (cb) => {
+
+  webpack(webpackConfig.background, (err, stats) => {
+    if (err) {
       throw err;
     }
-    gutil.log('[webpack]', stats.toString({
-      colors: gutil.colors.supportsColor,
-      chunks: false,
-      chunkModules: false,
-      hash: false
+
+    gutil.log('[webpack-background]', stats.toString({
+      colors: gutil.colors.supportsColor
     }));
+
     cb();
   });
 });
 
-gulp.task('watch', ['lint', 'webpack'], () => {
+gulp.task('webpack-test', (cb) => {
+  webpack(webpackConfig.test, (err, stats) => {
+    if (err) {
+      throw err;
+    }
+
+    gutil.log('[webpack-test]', stats.toString({
+      colors: gutil.colors.supportsColor
+    }));
+
+    cb();
+  });
+});
+
+gulp.task('scripts', ['webpack-background', 'webpack-test'], () => {
+  return gulp.src('app/src/chromereload.js')
+    .pipe(gulp.dest('app/scripts'));
+});
+
+gulp.task('watch', ['lint', 'scripts'], () => {
   livereload.listen();
 
   gulp.watch([
-    'app/bundles/test.js',
+    'app/scripts/**/*.js',
     'app/images/**/*',
     'app/_locales/**/*.json'
   ]).on('change', livereload.reload);
 
-  gulp.watch([
-    'app/src/**/*.js',
-    'app/test/**/*.js'
-  ], ['lint', 'webpack']);
+  gulp.watch('app/src/**/*.js', ['lint', 'webpack-background']);
+  gulp.watch('app/test/**/*.js', ['lint', 'webpack-test']);
 });
 
 gulp.task('manifest', () => {
   let manifestOpts = {
     buildnumber: false,
     background: {
-      target: 'src/background.js',
+      target: 'scripts/background.js',
       exclude: [
-        'src/chromereload.js'
+        'scripts/chromereload.js'
       ]
     }
   };
   return gulp.src('app/manifest.json')
-  .pipe(manifest(manifestOpts))
-  .pipe(gulp.dest('dist'));
+    .pipe(manifest(manifestOpts))
+    .pipe(gulp.dest('dist'));
 });
 
 gulp.task('extras', () => {
@@ -71,9 +91,9 @@ gulp.task('extras', () => {
     'app/*',
     'app/_locales/**',
     'app/images/**',
-    'app/bundles/*',
+    'app/scripts/*',
     'app/test/*',
-    '!app/node_modules',
+    '!app/src',
     '!app/*.json'
   ], {
     base: 'app',
@@ -85,12 +105,12 @@ gulp.task('extras', () => {
 
 gulp.task('build', (cb) => {
   runSequence(
-    'lint', 'webpack',
+    'lint', 'scripts',
     ['manifest', 'extras'], cb);
 });
 
 gulp.task('clean', () => {
-  return del(['dist', 'app/bundles']).then(paths =>
+  return del(['dist', 'app/scripts']).then(paths =>
     paths.forEach(path => gutil.log('deleted:', gutil.colors.blue(path)))
   );
 });

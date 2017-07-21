@@ -3,11 +3,11 @@
 const expect = require('chai').expect,
   sinon = require('sinon'),
   error = require('selenium-webdriver/lib/error'),
-  FakeDebugger = require('./fake_debugger'),
+  FakeDebugger = require('./client/fake_debugger'),
   FrameTracker = require('./frame_tracker');
 
 
-describe('extension', () => {
+describe('debugger', () => {
 
   describe('FrameTracker', () => {
     let frameTracker, dbg;

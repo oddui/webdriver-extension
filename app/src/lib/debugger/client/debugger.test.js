@@ -7,7 +7,7 @@ const expect = require('chai').expect,
   Debugger = require('./debugger');
 
 
-describe('extension', () => {
+describe('debugger', () => {
 
   describe('Debugger', () => {
 

@@ -15,7 +15,7 @@ class JavaScriptDialogManager {
 
   constructor() {
     this.debugger_ = null;
-    this.log_ = logging.getLogger('webdriver.extension.JavaScriptDialogManager');
+    this.log_ = logging.getLogger('webdriver.debugger.JavaScriptDialogManager');
     this.unhandledDialogQueue_ = [];
 
     this.onJavaScriptDialogOpening_ = this.onJavaScriptDialogOpening_.bind(this);

@@ -4,7 +4,7 @@
 const logging = require('selenium-webdriver/lib/logging'),
   error = require('selenium-webdriver/lib/error'),
   promise = require('selenium-webdriver/lib/promise'),
-  Debugger = require('./debugger'),
+  Debugger = require('./client/debugger'),
   FrameTracker = require('./frame_tracker'),
   JavaScriptDialogManager = require('./javascript_dialog_manager'),
   navigationTrackers = require('./navigation_tracker');
@@ -40,7 +40,7 @@ class Tab {
   constructor(tabData, pageLoadStrategy) {
     this.id_ = tabData.id;
 
-    this.log_ = logging.getLogger('webdriver.extension.Tab');
+    this.log_ = logging.getLogger('webdriver.debugger.Tab');
     this.debugger_ = new Debugger();
     this.frameTracker_ = new FrameTracker();
     this.dialogManager_ = new JavaScriptDialogManager();

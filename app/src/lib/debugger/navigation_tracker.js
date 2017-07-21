@@ -85,7 +85,7 @@ class NavigationTracker extends NavigationTrackerInterface {
 
     this.debugger_ = null;
     this.dialogManager_ = dialogManager;
-    this.log_ = logging.getLogger('webdriver.extension.NavigationTracker');
+    this.log_ = logging.getLogger('webdriver.debugger.NavigationTracker');
 
     this.onExecutionContextCreated_ = this.onExecutionContextCreated_.bind(this);
     this.onExecutionContextDestroyed_ = this.onExecutionContextDestroyed_.bind(this);

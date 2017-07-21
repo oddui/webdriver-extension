@@ -3,12 +3,12 @@
 const expect = require('chai').expect,
   sinon = require('sinon'),
   error = require('selenium-webdriver/lib/error'),
-  FakeDebugger = require('./fake_debugger'),
+  FakeDebugger = require('./client/fake_debugger'),
   PageLoadStrategy = require('./navigation_tracker').PageLoadStrategy,
   Tab = require('./tab');
 
 
-describe('extension', () => {
+describe('debugger', () => {
 
   describe('Tab', () => {
     let tab, dbg;

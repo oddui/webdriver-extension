@@ -22,7 +22,7 @@ class Debugger extends EventEmitter {
     this.onUnexpectedDetach_ = this.onUnexpectedDetach_.bind(this);
 
     /** @private {!logging.Logger} */
-    this.log_ = logging.getLogger('webdriver.extension.Debugger');
+    this.log_ = logging.getLogger('webdriver.debugger.Debugger');
   }
 
   onEvent_(debuggee, method, params) {

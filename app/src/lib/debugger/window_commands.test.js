@@ -2,16 +2,12 @@
 
 const expect = require('chai').expect,
   error = require('selenium-webdriver/lib/error'),
-  fakeChromeApi = require('./fake_chrome_api'),
   sessions = require('./session'),
   { go, refresh } = require('./window_commands');
 
 
-describe('extension', () => {
+describe('debugger', () => {
   let sessionId;
-
-  before(fakeChromeApi.use);
-  after(fakeChromeApi.restore);
 
   beforeEach(() => {
     let session = new sessions.Session();

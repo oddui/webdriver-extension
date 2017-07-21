@@ -2,7 +2,7 @@
 
 const expect = require('chai').expect,
   error = require('selenium-webdriver/lib/error'),
-  fakeChromeApi = require('./fake_chrome_api'),
+  fakeChromeApi = require('./client/fake_chrome_api'),
   sessions = require('./session'),
   Session = sessions.Session,
   FrameInfo = sessions.FrameInfo,
@@ -11,7 +11,7 @@ const expect = require('chai').expect,
   removeSession = sessions.removeSession;
 
 
-describe('extension', () => {
+describe('debugger', () => {
 
   describe('active sessions', () => {
     let session;

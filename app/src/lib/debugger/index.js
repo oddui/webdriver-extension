@@ -114,8 +114,7 @@ function responseToString(res) {
 
 
 /**
- * A command executor that communicates with Chrome using `chrome.debugger`
- * extension API.
+ * A command executor that communicates with Chrome using the debugging protocol.
  *
  * @implements {cmd.Executor}
  */
@@ -126,7 +125,7 @@ class Executor {
     this.customCommands_ = new Map();
 
     /** @private {!logging.Logger} */
-    this.log_ = logging.getLogger('webdriver.extension.Executor');
+    this.log_ = logging.getLogger('webdriver.debugger.Executor');
   }
 
   /**

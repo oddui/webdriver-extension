@@ -1,7 +1,7 @@
 'use strict';
 
 const chrome = require('./chrome'),
-  extension = require('./extension'),
+  dbg = require('./debugger'),
   http = require('./http'),
   logging = require('selenium-webdriver/lib/logging'),
   promise = require('selenium-webdriver/lib/promise'),
@@ -442,7 +442,7 @@ class Builder {
 
     // Check for extension.
     if (browser === Browser.CHROME) {
-      let executor = new extension.Executor();
+      let executor = new dbg.Executor();
       return createDriver(chrome.Driver, capabilities, executor, this.flow_);
     } else {
       throw new Error(

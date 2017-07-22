@@ -11,6 +11,53 @@ const DEBUGGING_PROTOCOL_VERSION = '1.1';
  * @extends {EventEmitter}
  */
 class Debugger extends EventEmitter {
+
+  /**
+   * Get all tabs
+   */
+  static list() {
+    return new Promise((resolve, reject) => {
+      chrome.tabs.query({}, tabs => {
+        if (chrome.runtime.lastError) {
+          return reject(new Error(chrome.runtime.lastError.message));
+        }
+        resolve(tabs);
+      });
+    });
+  }
+
+  /**
+   * Open an empty tab in a new window
+   */
+  static new() {
+    return new Promise((resolve, reject) => {
+      chrome.windows.create({
+        url: 'about:blank'
+      }, window => {
+        if (chrome.runtime.lastError) {
+          return reject(new Error(chrome.runtime.lastError.message));
+        }
+        resolve(window.tabs[0]);
+      });
+    });
+  }
+
+  /**
+   * Close tab(s)
+   *
+   * @param {number|Array<number>} tabIds The tab id or list of tab ids to close
+   */
+  static close(tabIds) {
+    return new Promise((resolve, reject) => {
+      chrome.tabs.remove(tabIds, () => {
+        if (chrome.runtime.lastError) {
+          return reject(new Error(chrome.runtime.lastError.message));
+        }
+        resolve();
+      });
+    });
+  }
+
   constructor() {
     super();
 

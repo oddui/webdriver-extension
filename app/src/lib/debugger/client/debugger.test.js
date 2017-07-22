@@ -9,12 +9,35 @@ const expect = require('chai').expect,
 
 describe('debugger', () => {
 
+  before(fakeChromeApi.use);
+  after(fakeChromeApi.restore);
+
+
+  describe('Debugger.list', () => {
+    return Debugger.list()
+      .then(tabs => {
+        expect(tabs).to.be.instanceof(Array);
+      });
+  });
+
+  describe('Debugger.new', () => {
+    return Debugger.new()
+      .then(tab => {
+        expect(typeof tab.id).to.equal('number');
+      });
+  });
+
+  describe('Debugger.close', () => {
+    return Debugger.list()
+      .then(tabs => {
+        return Debugger.close(tabs.map(tab => tab.id));
+      });
+  });
+
+
   describe('Debugger', () => {
 
     let dbg, tab = { id: 1 };
-
-    before(fakeChromeApi.use);
-    after(fakeChromeApi.restore);
 
     beforeEach(() => dbg = new Debugger());
 

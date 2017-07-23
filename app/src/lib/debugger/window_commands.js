@@ -14,7 +14,7 @@ function executeWindowOperation(session, op) {
   }
 
   try {
-    tab = session.getTargetTab();
+    tab = session.getCurrentTab();
   } catch(e) {
     return Promise.reject(e);
   }

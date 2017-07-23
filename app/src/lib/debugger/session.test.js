@@ -2,13 +2,9 @@
 
 const expect = require('chai').expect,
   error = require('selenium-webdriver/lib/error'),
-  fakeChromeApi = require('./client/fake_chrome_api'),
   sessions = require('./session'),
-  Session = sessions.Session,
-  FrameInfo = sessions.FrameInfo,
-  addSession = sessions.addSession,
-  findSession = sessions.findSession,
-  removeSession = sessions.removeSession;
+  sinon = require('sinon'),
+  { Session, FrameInfo, addSession, findSession, removeSession } = sessions;
 
 
 describe('debugger', () => {
@@ -125,90 +121,67 @@ describe('debugger', () => {
         { id: 3 }
       ];
 
-      before(fakeChromeApi.use);
-      after(fakeChromeApi.restore);
+      let list;
 
-      beforeEach(() => chrome.tabs.setTabs(tabsData.slice(0)));
+      beforeEach(() => {
+        // track tabsData
 
-      describe('updateTabs_', () => {
+        list = sinon.stub().returns(Promise.resolve([]));
+
+        return session.trackTabs(list, () => list.returns(Promise.resolve(tabsData)));
+      });
+
+      describe('trackTabs', () => {
         const updatedTabsData = [
           { id: 2 },
           { id: 3 },
           { id: 4 }
         ];
 
-        beforeEach(() => chrome.tabs.setTabs(updatedTabsData));
-
-        it('removes closed tabs', () => {
-          return session.updateTabs_()
-            .then(() => {
-              expect(session.getTabById(1)).to.be.null;
-            });
+        it('removes closed tabs from tracking tabs', () => {
+          return session.trackTabs(list, () => list.returns(Promise.resolve(updatedTabsData)))
+            .then(() => expect(session.getTabById(1)).to.be.null);
         });
 
-        it('adds newly-opened tabs', () => {
-          return session.updateTabs_()
-            .then(() => {
-              expect(session.getTabById(4)).not.to.be.null;
-            });
+        it('adds newly-opened tabs to tracking tabs', () => {
+          return session.trackTabs(list, () => list.returns(Promise.resolve(updatedTabsData)))
+            .then(() => expect(session.getTabById(4)).not.to.be.null);
         });
       });
 
       describe('getTabIds', () => {
-        it('updates tabs and returns tab ids', () => {
-          return session.getTabIds()
-            .then(tabIds => {
-              expect(tabIds).to.deep.equal(tabsData.map(tabData => tabData.id));
-            });
+        it('returns tab ids', () => {
+          let tabIds = session.getTabIds();
+          expect(tabIds).to.deep.equal(tabsData.map(tabData => tabData.id));
         });
       });
 
-      describe('getFirstTabId', () => {
-        it('updates tabs and returns the first tab id', () => {
-          return session.getFirstTabId()
-            .then(id => {
-              expect(id).to.equal(tabsData[0].id);
-            });
+      describe('getFirstTab', () => {
+        it('returns the first tab id', () => {
+          let tab = session.getFirstTab();
+          expect(tab.getId()).to.equal(tabsData[0].id);
         });
       });
 
-      describe('closeTab', () => {
-        it('closes the tab in chrome and removes it from tracking tabs', () => {
-          return session.getFirstTabId()
-            .then(id => {
-              return session.closeTab(id)
-                .then(() => {
-                  return new Promise(resolve => chrome.tabs.query({}, resolve));
-                })
-                .then(tabsData => {
-                  expect(tabsData.map(tabData => tabData.id)).not.to.include(id);
-                  expect(session.getTabById(id)).to.be.null;
-                });
-            });
+      describe('setCurrentTabId', () => {
+        it('sets the current tab id', () => {
+          let id = session.getFirstTab().getId();
+
+          session.setCurrentTabId(id);
+          expect(session.currentTabId_).to.equal(id);
         });
       });
 
-      describe('setTargetTabId', () => {
-        it('sets target tab id', () => {
-          return session.getFirstTabId()
-            .then(id => {
-              session.setTargetTabId(id);
-              expect(session.targetTabId_).to.equal(id);
-            });
-        });
-      });
+      describe('getCurrentTab', () => {
+        it('returns current tab', () => {
+          let id = session.getFirstTab().getId();
+          session.setCurrentTabId(id);
 
-      describe('getTargetTab', () => {
-        it('gets target tab by target tab id', () => {
-          return session.getFirstTabId()
-            .then(id => {
-              session.setTargetTabId(id);
-              expect(session.getTargetTab().getId()).to.equal(id);
-            });
+          expect(session.getCurrentTab().getId()).to.equal(id);
         });
 
-        it('throws no such window error if cannot find tab by target tab id', () => {
-          expect(() => session.getTargetTab(-1)).to.throw(error.NoSuchWindowError);
+        it('throws no such window error if cannot find current tab', () => {
+          expect(() => session.getCurrentTab()).to.throw(error.NoSuchWindowError);
         });
       });
     });

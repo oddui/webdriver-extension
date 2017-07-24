@@ -2,8 +2,10 @@
 
 
 const error = require('selenium-webdriver/lib/error'),
-  sessions = require('./session'),
-  findSession = sessions.findSession;
+  { findSession } = require('./session');
+
+
+let Debugger = null;
 
 
 function executeWindowOperation(session, op) {
@@ -23,7 +25,7 @@ function executeWindowOperation(session, op) {
     return tab.waitForPendingNavigation(session.getCurrentFrameId(), session.getPageLoadTimeout(), true);
   }
 
-  return tab.connect() // TODO: pass debugger instance
+  return tab.connect(new Debugger())
     .then(() => {
       let dialogManager = tab.getJavaScriptDialogManager();
 
@@ -63,5 +65,9 @@ function refresh(parameters) {
 
 module.exports = {
   go: go,
-  refresh: refresh
+  refresh: refresh,
+
+  set Debugger (value) {
+    Debugger = value;
+  }
 };

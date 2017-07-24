@@ -2,15 +2,14 @@
 
 const expect = require('chai').expect,
   error = require('selenium-webdriver/lib/error'),
-  fakeChromeApi = require('./client/fake_chrome_api'),
   sessions = require('./session'),
-  { newSession, deleteSession, MAXIMUM_ACTIVE_SESSIONS } = require('./session_commands');
+  sessionCommands = require('./session_commands'),
+  { newSession, deleteSession } = sessionCommands;
+
+sessionCommands.Debugger = require('./client/fake');
 
 
 describe('debugger', () => {
-
-  before(fakeChromeApi.use);
-  after(fakeChromeApi.restore);
 
   afterEach(sessions.clearActiveSessions);
 
@@ -18,7 +17,7 @@ describe('debugger', () => {
     it('throws session not created if reached maximum active sessions', () => {
       let promises = [];
 
-      for (let i = 0; i < MAXIMUM_ACTIVE_SESSIONS; i++) {
+      for (let i = 0; i < sessions.MAXIMUM_ACTIVE_SESSIONS; i++) {
         promises.push(newSession({ desiredCapabilities: {} }));
       }
 

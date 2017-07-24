@@ -3,7 +3,10 @@
 const expect = require('chai').expect,
   error = require('selenium-webdriver/lib/error'),
   sessions = require('./session'),
-  { go, refresh } = require('./window_commands');
+  windowCommands = require('./window_commands'),
+  { go, refresh } = windowCommands;
+
+windowCommands.Debugger =  require('./client/fake');
 
 
 describe('debugger', () => {

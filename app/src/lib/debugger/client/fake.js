@@ -3,10 +3,36 @@
 const EventEmitter = require('events');
 
 
+let tabs = [],
+  nextTabId = 0;
+
+
 /**
  * @extends {EventEmitter}
  */
 class FakeDebugger extends EventEmitter {
+
+  static list() {
+    return Promise.resolve(tabs);
+  }
+
+  static new() {
+    let tab = { id: nextTabId++ };
+    tabs.push(tab);
+    return Promise.resolve(tab);
+  }
+
+  static close(tabIds) {
+    tabIds.forEach(id => {
+      let tabAt = tabs.findIndex(tab => tab.id === id);
+
+      if (tabAt !== -1) {
+        tabs.splice(tabAt, 1);
+      }
+    });
+    return Promise.resolve();
+  }
+
   constructor() {
     super();
 

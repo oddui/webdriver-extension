@@ -157,10 +157,10 @@ class Session {
     let tabsBefore, tabsAfter;
 
     return list()
-      .then(tabs => tabsBefore = tabs)
+      .then(tabs => tabsBefore = tabs.slice(0))
       .then(() => interaction())
       .then(() => list())
-      .then(tabs => tabsAfter = tabs)
+      .then(tabs => tabsAfter = tabs.slice(0))
       .then(() => {
         let tabIdsBefore, tabIdsAfter;
 

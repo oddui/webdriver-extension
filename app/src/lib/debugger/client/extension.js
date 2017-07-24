@@ -10,7 +10,7 @@ const DEBUGGING_PROTOCOL_VERSION = '1.1';
 /**
  * @extends {EventEmitter}
  */
-class Debugger extends EventEmitter {
+class ExtensionDebugger extends EventEmitter {
 
   /**
    * Get all tabs
@@ -69,7 +69,7 @@ class Debugger extends EventEmitter {
     this.onUnexpectedDetach_ = this.onUnexpectedDetach_.bind(this);
 
     /** @private {!logging.Logger} */
-    this.log_ = logging.getLogger('webdriver.debugger.Debugger');
+    this.log_ = logging.getLogger('webdriver.debugger.extension');
   }
 
   onEvent_(debuggee, method, params) {
@@ -281,4 +281,4 @@ class Debugger extends EventEmitter {
 }
 
 
-module.exports = Debugger;
+module.exports = ExtensionDebugger;

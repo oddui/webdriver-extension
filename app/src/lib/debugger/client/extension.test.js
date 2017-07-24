@@ -4,7 +4,7 @@ const expect = require('chai').expect,
   sinon = require('sinon'),
   fakeChromeApi = require('./fake_chrome_api'),
   error = require('selenium-webdriver/lib/error'),
-  Debugger = require('./debugger');
+  Debugger = require('./extension');
 
 
 describe('debugger', () => {
@@ -13,21 +13,21 @@ describe('debugger', () => {
   after(fakeChromeApi.restore);
 
 
-  describe('Debugger.list', () => {
+  describe('ExtensionDebugger.list', () => {
     return Debugger.list()
       .then(tabs => {
         expect(tabs).to.be.instanceof(Array);
       });
   });
 
-  describe('Debugger.new', () => {
+  describe('ExtensionDebugger.new', () => {
     return Debugger.new()
       .then(tab => {
         expect(typeof tab.id).to.equal('number');
       });
   });
 
-  describe('Debugger.close', () => {
+  describe('ExtensionDebugger.close', () => {
     return Debugger.list()
       .then(tabs => {
         return Debugger.close(tabs.map(tab => tab.id));
@@ -35,7 +35,7 @@ describe('debugger', () => {
   });
 
 
-  describe('Debugger', () => {
+  describe('ExtensionDebugger', () => {
 
     let dbg, tab = { id: 1 };
 
@@ -46,7 +46,7 @@ describe('debugger', () => {
       let EVENT = 'some event', spy;
 
       beforeEach(() => {
-        spy = sinon.spy()
+        spy = sinon.spy();
         return dbg.connect(tab.id);
       });
       afterEach(() => dbg.disconnect());

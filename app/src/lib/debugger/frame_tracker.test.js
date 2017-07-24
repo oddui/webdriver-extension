@@ -3,7 +3,7 @@
 const expect = require('chai').expect,
   sinon = require('sinon'),
   error = require('selenium-webdriver/lib/error'),
-  FakeDebugger = require('./client/fake_debugger'),
+  FakeDebugger = require('./client/fake'),
   FrameTracker = require('./frame_tracker');
 
 

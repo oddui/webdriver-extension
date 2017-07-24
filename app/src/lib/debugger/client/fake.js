@@ -6,7 +6,7 @@ const EventEmitter = require('events');
 /**
  * @extends {EventEmitter}
  */
-class Debugger extends EventEmitter {
+class FakeDebugger extends EventEmitter {
   constructor() {
     super();
 
@@ -104,4 +104,4 @@ class Debugger extends EventEmitter {
 }
 
 
-module.exports = Debugger;
+module.exports = FakeDebugger;

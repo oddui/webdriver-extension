@@ -23,7 +23,7 @@ function executeWindowOperation(session, op) {
     return tab.waitForPendingNavigation(session.getCurrentFrameId(), session.getPageLoadTimeout(), true);
   }
 
-  return tab.connectIfNecessary()
+  return tab.connect() // TODO: pass debugger instance
     .then(() => {
       let dialogManager = tab.getJavaScriptDialogManager();
 

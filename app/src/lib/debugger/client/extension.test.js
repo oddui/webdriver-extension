@@ -212,11 +212,6 @@ describe('debugger', () => {
             .catch(e => {
               expect(e).to.be.instanceOf(error.TimeoutError);
               expect(dbg.commandInfoMap_.size).to.equal(0);
-            })
-            .then(() => {
-              // Give enough time for the result callback to execute before
-              // the fakeChromeApi gets restored.
-              return new Promise(resolve => setTimeout(resolve, 200));
             });
         });
       });

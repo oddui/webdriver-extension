@@ -86,12 +86,11 @@ class ExtensionDebugger extends EventEmitter {
     // A command may have opened the dialog, which will block the response.
     // Reject all registered commands. This is better than risking a hang.
     if (method === 'Page.javascriptDialogOpening') {
-      for (let entry of this.commandInfoMap_) {
-        let id = entry[0], info = entry[1];
-
+      for (let info of this.commandInfoMap_.values()) {
+        info.clearTimeout();
         info.reject(new error.UnexpectedAlertOpenError(undefined, params.message));
-        this.commandInfoMap_.delete(id);
       }
+      this.commandInfoMap_.clear();
     }
   }
 
@@ -234,28 +233,35 @@ class ExtensionDebugger extends EventEmitter {
     return new Promise((resolve, reject) => {
       this.log_.finest(`method => browser, ${command} ${JSON.stringify(params)}`);
 
-      let commandId = this.nextCommandId_++;
-
-      this.commandInfoMap_.set(commandId, {
-        resolve: resolve,
-        reject: reject,
-        name: command
-      });
-
-      let timer = null;
+      let commandId = this.nextCommandId_++,
+        clearTimeout = () => {};
 
       if (typeof timeout === 'number') {
-        timer = setTimeout(() => {
+        let timer = global.setTimeout(() => {
           this.commandInfoMap_.delete(commandId);
 
           let message = `${command} timed out after ${timeout} milliseconds`;
           this.log_.severe(message);
           reject(new error.TimeoutError(message));
         }, timeout);
+
+        clearTimeout = () => global.clearTimeout(timer);
       }
 
+      this.commandInfoMap_.set(commandId, {
+        resolve,
+        reject,
+        clearTimeout,
+        name: command
+      });
+
       chrome.debugger.sendCommand({tabId: this.tabId_}, command, params, result => {
-        timer && clearTimeout(timer);
+        if (!this.commandInfoMap_.has(commandId)) {
+          // exit if command was timed out or blocked by javascript dialog
+          return;
+        }
+
+        clearTimeout();
 
         this.commandInfoMap_.delete(commandId);
 

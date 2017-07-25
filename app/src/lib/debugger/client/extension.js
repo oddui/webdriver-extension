@@ -76,7 +76,11 @@ class ExtensionDebugger extends EventEmitter {
     this.log_ = logging.getLogger('webdriver.debugger.extension');
   }
 
-  onEvent_(debuggee, method, params) {
+  onEvent_(source, method, params) {
+    if (source.tabId !== this.tabId_) {
+      return;
+    }
+
     this.emit(method, params);
 
     // A command may have opened the dialog, which will block the response.
@@ -91,7 +95,11 @@ class ExtensionDebugger extends EventEmitter {
     }
   }
 
-  onUnexpectedDetach_(debuggee, detachReason) {
+  onUnexpectedDetach_(source, detachReason) {
+    if (source.tabId !== this.tabId_) {
+      return;
+    }
+
     this.detachCleanup_();
     this.log_.finest(`debugger detached from browser: ${detachReason}`);
   }

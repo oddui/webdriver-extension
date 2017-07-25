@@ -14,24 +14,30 @@ describe('debugger', () => {
 
 
   describe('ExtensionDebugger.list', () => {
-    return Debugger.list()
-      .then(tabs => {
-        expect(tabs).to.be.instanceof(Array);
-      });
+    it('lists tabs', () => {
+      return Debugger.list()
+        .then(tabs => {
+          expect(tabs).to.be.instanceof(Array);
+        });
+    });
   });
 
   describe('ExtensionDebugger.new', () => {
-    return Debugger.new()
-      .then(tab => {
-        expect(typeof tab.id).to.equal('number');
-      });
+    it('creates an empty tab', () => {
+      return Debugger.new()
+        .then(tab => {
+          expect(typeof tab.id).to.equal('number');
+        });
+    });
   });
 
   describe('ExtensionDebugger.close', () => {
-    return Debugger.list()
-      .then(tabs => {
-        return Debugger.close(tabs.map(tab => tab.id));
-      });
+    it('closes tabs', () => {
+      return Debugger.list()
+        .then(tabs => {
+          return Debugger.close(tabs.map(tab => tab.id));
+        });
+    });
   });
 
 
@@ -101,7 +107,7 @@ describe('debugger', () => {
       beforeEach(() => dbg.connect(tab.id));
       afterEach(() => dbg.disconnect());
 
-      it('returns resolved promise if connect again', () => {
+      it('returns resolved promise if already connected', () => {
         return dbg.connect(tab.id)
           .then(() => expect(dbg.getTabId()).to.equal(tab.id));
       });
@@ -111,12 +117,21 @@ describe('debugger', () => {
           params = { arg: 1 };
         dbg.on('method', listener);
 
-        chrome.debugger.emitEvent('method', params);
+        chrome.debugger.emitEvent({ tabId: tab.id }, 'method', params);
         expect(listener.calledWith(params)).to.be.true;
       });
 
+      it('does not emit debugger events for other sources', () => {
+        let listener = sinon.spy(),
+          params = { arg: 1 };
+        dbg.on('method', listener);
+
+        chrome.debugger.emitEvent({ tabId: 99 }, 'method', params);
+        expect(listener.called).to.be.false;
+      });
+
       it('cleans debugger state on unexpected detach', () => {
-        chrome.debugger.emitDetach('user_canceled');
+        chrome.debugger.emitDetach({ tabId: tab.id }, 'user_canceled');
         expect(dbg.getTabId()).to.be.null;
       });
     });
@@ -128,7 +143,7 @@ describe('debugger', () => {
           .then(() => dbg.disconnect());
       });
 
-      it('returns resolved promise if disconnect again', () => {
+      it('returns resolved promise if not connected', () => {
         return dbg.disconnect()
           .then(() => expect(dbg.getTabId()).to.be.null);
       });
@@ -138,6 +153,9 @@ describe('debugger', () => {
 
 
     describe('sendCommand', () => {
+
+      afterEach(() => dbg.disconnect());
+
       it('rejects if not connected to debuggee', () => {
         return dbg.sendCommand()
           .catch((e) => expect(e.message).to.match(/connect\(\) must be called/i));
@@ -164,12 +182,15 @@ describe('debugger', () => {
       });
 
       it('rejects if blocked by JavaScript dialog', () => {
-        let promise = dbg.connect(tab.id)
-          .then(() => dbg.sendCommand('method'));
+        chrome.debugger.setCommandDuration(100);
 
-        chrome.debugger.emitEvent('Page.javascriptDialogOpening', { message: 'dialog message' });
-
-        return promise
+        return dbg.connect(tab.id)
+          .then(() => {
+            let promise = dbg.sendCommand('method');
+            chrome.debugger.emitEvent({ tabId: tab.id }, 'Page.javascriptDialogOpening', { message: 'dialog message' });
+            return promise;
+          })
+          .then(() => Promise.reject('Expected method to reject.'))
           .catch(e => {
             expect(e).to.be.instanceOf(error.UnexpectedAlertOpenError);
             expect(e.getAlertText()).to.equal('dialog message');

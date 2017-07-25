@@ -4,11 +4,15 @@ const EventEmitter = require('events'),
   error = require('selenium-webdriver/lib/error'),
   logging = require('selenium-webdriver/lib/logging');
 
-const DEBUGGING_PROTOCOL_VERSION = '1.1';
+const DEBUGGING_PROTOCOL_VERSION = '1.2';
 
 
 /**
  * @extends {EventEmitter}
+ *
+ * Events
+ * `<domain>.<method>`
+ * `commandSuccess`
  */
 class ExtensionDebugger extends EventEmitter {
 
@@ -194,14 +198,8 @@ class ExtensionDebugger extends EventEmitter {
    * @param {function} cb
    */
   onCommandSuccess(cb) {
-    if (this.tabId_ === null) {
-      throw new Error('connect() must be called before attempting to listen to events.');
-    }
-
-    this.log_.finest(`listen for command response`);
-    super.on('commandSuccess', cb);
+    this.on('commandSuccess', cb);
   }
-
 
   /**
    * Unbind listener for command response
@@ -209,11 +207,7 @@ class ExtensionDebugger extends EventEmitter {
    * @param {function} cb
    */
   offCommandSuccess(cb) {
-    if (this.tabId_ === null) {
-      throw new Error('connect() must be called before attempting to listen to events.');
-    }
-
-    super.removeListener('commandSuccess', cb);
+    this.off('commandSuccess', cb);
   }
 
   /**
@@ -221,7 +215,7 @@ class ExtensionDebugger extends EventEmitter {
    *
    * @param {!string} command
    * @param {!Object} params
-   * @param {=number} timeout Optional timeout in millisecconds
+   * @param {?number} timeout Optional timeout in millisecconds
    * @return {!Promise}
    */
   sendCommand(command, params, timeout) {
@@ -262,10 +256,8 @@ class ExtensionDebugger extends EventEmitter {
           return reject(new Error(chrome.runtime.lastError.message));
         }
 
-        // As of crrev.com/411814, Runtime.evaluate no longer returns a 'wasThrown'
-        // property in the response, so check 'exceptionDetails' instead.
-        // TODO: Ignore 'wasThrown' when we stop supporting Chrome 53.
-        if (result.wasThrown || result.exceptionDetails) {
+        // Reject the returning promise for `Runtime.evalute` exceptions while evaluating the expression.
+        if (result.exceptionDetails) {
           this.log_.severe(`method <= browser ERR, ${command} ${JSON.stringify(result.exceptionDetails)}`);
           return reject(new Error(`${command} was thrown error.`));
         }

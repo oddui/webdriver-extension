@@ -158,7 +158,7 @@ describe('debugger', () => {
 
       it('rejects if not connected to debuggee', () => {
         return dbg.sendCommand()
-          .catch((e) => expect(e.message).to.match(/connect\(\) must be called/i));
+          .catch(e => expect(e.message).to.match(/not\sconnected/i));
       });
 
       it('rejects if an evaluate-like method was thrown error');
@@ -166,7 +166,7 @@ describe('debugger', () => {
       it('resolves with command result', () => {
         return dbg.connect(tab.id)
           .then(() => dbg.sendCommand())
-          .then((result) => {
+          .then(result => {
             expect(result).not.to.be.undefined;
             expect(dbg.commandInfoMap_.size).to.equal(0);
           });
@@ -198,17 +198,19 @@ describe('debugger', () => {
       });
 
       describe('with timeout', () => {
-        beforeEach(() => chrome.debugger.setCommandDuration(200));
+        beforeEach(() => {
+          chrome.debugger.setCommandDuration(200);
+          return dbg.connect(tab.id);
+        });
 
         it('resolves if not timed out', () => {
-          return dbg.connect(tab.id)
-            .then(() => dbg.sendCommand('method', {}, 300))
+          return dbg.sendCommand('method', {}, 300)
             .then((result) => expect(result).not.to.be.undefined);
         });
 
         it('rejects with error.TimeoutError if timed out', () => {
-          return dbg.connect(tab.id)
-            .then(() => dbg.sendCommand('method', {}, 100))
+          return dbg.sendCommand('method', {}, 100)
+            .then(() => Promise.reject('Expected method to reject.'))
             .catch(e => {
               expect(e).to.be.instanceOf(error.TimeoutError);
               expect(dbg.commandInfoMap_.size).to.equal(0);

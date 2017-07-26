@@ -100,7 +100,7 @@ class ExtensionDebugger extends EventEmitter {
     }
 
     this.detachCleanup_();
-    this.log_.finest(`debugger detached from browser: ${detachReason}`);
+    this.log_.finest(`detached from tab: ${detachReason}`);
   }
 
   detachCleanup_() {
@@ -116,6 +116,12 @@ class ExtensionDebugger extends EventEmitter {
 
   isConnected() {
     return this.tabId_ !== null;
+  }
+
+  throwIfNotConnected_() {
+    if (!this.isConnected()) {
+      throw new Error('Debugger is not connected.');
+    }
   }
 
   connect(tabId) {
@@ -160,11 +166,7 @@ class ExtensionDebugger extends EventEmitter {
    * @param {function(...)} cb
    */
   on(eventName, cb) {
-    if (this.tabId_ === null) {
-      throw new Error('connect() must be called before attempting to listen to events.');
-    }
-
-    this.log_.finest(`listen for event => ${eventName}`);
+    this.throwIfNotConnected_();
     super.on(eventName, cb);
   }
 
@@ -176,11 +178,7 @@ class ExtensionDebugger extends EventEmitter {
    * @param {function(...)} cb
    */
   once(eventName, cb) {
-    if (this.tabId_ === null) {
-      throw new Error('connect() must be called before attempting to listen to events.');
-    }
-
-    this.log_.finest(`listen once for event => ${eventName}`);
+    this.throwIfNotConnected_();
     super.once(eventName, cb);
   }
 
@@ -191,10 +189,7 @@ class ExtensionDebugger extends EventEmitter {
    * @param {function(...)} cb
    */
   off(eventName, cb) {
-    if (this.tabId_ === null) {
-      throw new Error('connect() must be called before attempting to listen to events.');
-    }
-
+    this.throwIfNotConnected_();
     super.removeListener(eventName, cb);
   }
 
@@ -226,8 +221,10 @@ class ExtensionDebugger extends EventEmitter {
    * @return {!Promise}
    */
   sendCommand(command, params, timeout) {
-    if (this.tabId_ === null) {
-      return Promise.reject(new Error('connect() must be called before attempting to send commands.'));
+    try {
+      this.throwIfNotConnected_();
+    } catch(e) {
+      return Promise.reject(e);
     }
 
     return new Promise((resolve, reject) => {
@@ -266,20 +263,21 @@ class ExtensionDebugger extends EventEmitter {
         this.commandInfoMap_.delete(commandId);
 
         if (chrome.runtime.lastError) {
-          this.log_.severe(`method <= browser ERR, ${command} ${JSON.stringify(chrome.runtime.lastError)}`);
+          this.log_.severe(`method <= browser ERR, ${command} ${chrome.runtime.lastError.message}`);
           return reject(new Error(chrome.runtime.lastError.message));
         }
 
         // Reject the returning promise for `Runtime.evalute` exceptions while evaluating the expression.
         if (result.exceptionDetails) {
-          this.log_.severe(`method <= browser ERR, ${command} ${JSON.stringify(result.exceptionDetails)}`);
-          return reject(new Error(`${command} was thrown error.`));
+          let error = new Error(`${command} exception was thrown during script execution`);
+          error.exceptionDetails = result.exceptionDetails;
+
+          this.log_.severe(`method <= browser ERR, ${error.message}`);
+          return reject(error);
         }
 
         this.log_.finest(`method <= browser OK, ${command} ${JSON.stringify(result)}`);
-
         this.emit('commandSuccess', command, result, timeout);
-
         resolve(result);
       });
     });

@@ -148,7 +148,7 @@ class NavigationTracker extends NavigationTrackerInterface {
         }
       })
       .catch(e => {
-        if (/connect\(\) must be called/i.test(e.message)) {
+        if (/not connected/i.test(e.message)) {
           // If the debugger is not connected, don't wait for pending navigations
           // to complete, since we won't see any more events from it until we reconnect.
           isPending = false;

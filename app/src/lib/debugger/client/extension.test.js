@@ -51,11 +51,7 @@ describe('debugger', () => {
     describe('is event emitter', () => {
       let EVENT = 'some event', spy;
 
-      beforeEach(() => {
-        spy = sinon.spy();
-        return dbg.connect(tab.id);
-      });
-      afterEach(() => dbg.disconnect());
+      beforeEach(() => spy = sinon.spy());
 
       it('on', () => {
         dbg.on(EVENT, spy);

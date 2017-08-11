@@ -104,9 +104,8 @@ describe('debugger', () => {
       });
 
       it('resolves false if debugger is not connected', () => {
-        dbg.disconnect();
-
-        return tracker.isPendingNavigation()
+        return dbg.disconnect()
+          .then(() => tracker.isPendingNavigation())
           .then(pending => expect(pending).to.be.false);
       });
 

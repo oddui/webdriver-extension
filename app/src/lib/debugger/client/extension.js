@@ -118,12 +118,6 @@ class ExtensionDebugger extends EventEmitter {
     return this.tabId_ !== null;
   }
 
-  throwIfNotConnected_() {
-    if (!this.isConnected()) {
-      throw new Error('Debugger is not connected.');
-    }
-  }
-
   connect(tabId) {
     if (this.tabId_ !== null) {
       return Promise.resolve();
@@ -166,7 +160,6 @@ class ExtensionDebugger extends EventEmitter {
    * @param {function(...)} cb
    */
   on(eventName, cb) {
-    this.throwIfNotConnected_();
     super.on(eventName, cb);
   }
 
@@ -178,7 +171,6 @@ class ExtensionDebugger extends EventEmitter {
    * @param {function(...)} cb
    */
   once(eventName, cb) {
-    this.throwIfNotConnected_();
     super.once(eventName, cb);
   }
 
@@ -189,7 +181,6 @@ class ExtensionDebugger extends EventEmitter {
    * @param {function(...)} cb
    */
   off(eventName, cb) {
-    this.throwIfNotConnected_();
     super.removeListener(eventName, cb);
   }
 
@@ -221,10 +212,8 @@ class ExtensionDebugger extends EventEmitter {
    * @return {!Promise}
    */
   sendCommand(command, params, timeout) {
-    try {
-      this.throwIfNotConnected_();
-    } catch(e) {
-      return Promise.reject(e);
+    if (!this.isConnected()) {
+      return Promise.reject(new Error('Debugger is not connected.'));
     }
 
     return new Promise((resolve, reject) => {

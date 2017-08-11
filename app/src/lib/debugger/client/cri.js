@@ -105,12 +105,6 @@ class CriDebugger {
     return this.tabId_ !== null;
   }
 
-  throwIfNotConnected_() {
-    if (!this.isConnected()) {
-      throw new Error('Debugger is not connected.');
-    }
-  }
-
   connect(tabId) {
     if (this.tabId_ !== null) {
       return Promise.resolve();
@@ -142,7 +136,6 @@ class CriDebugger {
    * @param {function(...)} cb
    */
   on(eventName, cb) {
-    this.throwIfNotConnected_();
     this.client_.on(eventName, cb);
   }
 
@@ -154,7 +147,6 @@ class CriDebugger {
    * @param {function(...)} cb
    */
   once(eventName, cb) {
-    this.throwIfNotConnected_();
     this.client_.once(eventName, cb);
   }
 
@@ -165,7 +157,6 @@ class CriDebugger {
    * @param {function(...)} cb
    */
   off(eventName, cb) {
-    this.throwIfNotConnected_();
     this.client_.removeListener(eventName, cb);
   }
 
@@ -197,10 +188,8 @@ class CriDebugger {
    * @return {!Promise}
    */
   sendCommand(command, params, timeout) {
-    try {
-      this.throwIfNotConnected_();
-    } catch(e) {
-      return Promise.reject(e);
+    if (!this.isConnected()) {
+      return Promise.reject(new Error('Debugger is not connected.'));
     }
 
     return new Promise((resolve, reject) => {

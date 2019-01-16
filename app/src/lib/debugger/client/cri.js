@@ -129,6 +129,10 @@ class CriDebugger {
       .then(() => this.detachCleanup_());
   }
 
+  emit(...args) {
+    this.client_.emit(...args);
+  }
+
   /**
    * Bind listeners for protocol events. The listener is invoked with the event parameters.
    *

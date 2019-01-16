@@ -153,6 +153,10 @@ class ExtensionDebugger extends EventEmitter {
     }).then(() => this.detachCleanup_());
   }
 
+  emit(...args) {
+    super.emit(...args);
+  }
+
   /**
    * Bind listeners for protocol events. The listener is invoked with the event parameters.
    *

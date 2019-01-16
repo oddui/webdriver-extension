@@ -38,27 +38,27 @@ function debuggerApi() {
     onDetach = new EventEmitter(),
     commandDuration = 0;
 
-  function emitEvent(method, params) {
-    onEvent.emit({}, method, params);
+  function emitEvent(source, method, params) {
+    onEvent.emit(source, method, params);
   }
 
-  function emitDetach(detachReason) {
-    onDetach.emit({}, detachReason);
+  function emitDetach(source, detachReason) {
+    onDetach.emit(source, detachReason);
   }
 
   function setCommandDuration(duration) {
     commandDuration = duration;
   }
 
-  function attach(debuggee, version, cb) {
+  function attach(source, version, cb) {
     setTimeout(cb);
   }
 
-  function detach(debuggee, cb) {
+  function detach(source, cb) {
     setTimeout(cb);
   }
 
-  function sendCommand(debuggee, command, params, cb) {
+  function sendCommand(source, command, params, cb) {
     setTimeout(function() {
       cb({});
     }, commandDuration);

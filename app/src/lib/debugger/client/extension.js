@@ -4,13 +4,64 @@ const EventEmitter = require('events'),
   error = require('selenium-webdriver/lib/error'),
   logging = require('selenium-webdriver/lib/logging');
 
-const DEBUGGING_PROTOCOL_VERSION = '1.1';
+const DEBUGGING_PROTOCOL_VERSION = '1.2';
 
 
 /**
  * @extends {EventEmitter}
+ *
+ * Events
+ * `<domain>.<method>`
+ * `commandSuccess`
  */
-class Debugger extends EventEmitter {
+class ExtensionDebugger extends EventEmitter {
+
+  /**
+   * Get all tabs
+   */
+  static list() {
+    return new Promise((resolve, reject) => {
+      chrome.tabs.query({}, tabs => {
+        if (chrome.runtime.lastError) {
+          return reject(new Error(chrome.runtime.lastError.message));
+        }
+        resolve(tabs);
+      });
+    });
+  }
+
+  /**
+   * Open an empty tab in a new window
+   */
+  static new() {
+    return new Promise((resolve, reject) => {
+      chrome.windows.create({
+        url: 'about:blank'
+      }, window => {
+        if (chrome.runtime.lastError) {
+          return reject(new Error(chrome.runtime.lastError.message));
+        }
+        resolve(window.tabs[0]);
+      });
+    });
+  }
+
+  /**
+   * Close tab(s)
+   *
+   * @param {number|Array<number>} tabIds The tab id or list of tab ids to close
+   */
+  static close(tabIds) {
+    return new Promise((resolve, reject) => {
+      chrome.tabs.remove(tabIds, () => {
+        if (chrome.runtime.lastError) {
+          return reject(new Error(chrome.runtime.lastError.message));
+        }
+        resolve();
+      });
+    });
+  }
+
   constructor() {
     super();
 
@@ -22,27 +73,34 @@ class Debugger extends EventEmitter {
     this.onUnexpectedDetach_ = this.onUnexpectedDetach_.bind(this);
 
     /** @private {!logging.Logger} */
-    this.log_ = logging.getLogger('webdriver.extension.Debugger');
+    this.log_ = logging.getLogger('webdriver.debugger.extension');
   }
 
-  onEvent_(debuggee, method, params) {
+  onEvent_(source, method, params) {
+    if (source.tabId !== this.tabId_) {
+      return;
+    }
+
     this.emit(method, params);
 
     // A command may have opened the dialog, which will block the response.
     // Reject all registered commands. This is better than risking a hang.
     if (method === 'Page.javascriptDialogOpening') {
-      for (let entry of this.commandInfoMap_) {
-        let id = entry[0], info = entry[1];
-
+      for (let info of this.commandInfoMap_.values()) {
+        info.clearTimeout();
         info.reject(new error.UnexpectedAlertOpenError(undefined, params.message));
-        this.commandInfoMap_.delete(id);
       }
+      this.commandInfoMap_.clear();
     }
   }
 
-  onUnexpectedDetach_(debuggee, detachReason) {
+  onUnexpectedDetach_(source, detachReason) {
+    if (source.tabId !== this.tabId_) {
+      return;
+    }
+
     this.detachCleanup_();
-    this.log_.finest(`debugger detached from browser: ${detachReason}`);
+    this.log_.finest(`detached from tab: ${detachReason}`);
   }
 
   detachCleanup_() {
@@ -95,6 +153,10 @@ class Debugger extends EventEmitter {
     }).then(() => this.detachCleanup_());
   }
 
+  emit(...args) {
+    super.emit(...args);
+  }
+
   /**
    * Bind listeners for protocol events. The listener is invoked with the event parameters.
    *
@@ -102,11 +164,6 @@ class Debugger extends EventEmitter {
    * @param {function(...)} cb
    */
   on(eventName, cb) {
-    if (this.tabId_ === null) {
-      throw new Error('connect() must be called before attempting to listen to events.');
-    }
-
-    this.log_.finest(`listen for event => ${eventName}`);
     super.on(eventName, cb);
   }
 
@@ -118,11 +175,6 @@ class Debugger extends EventEmitter {
    * @param {function(...)} cb
    */
   once(eventName, cb) {
-    if (this.tabId_ === null) {
-      throw new Error('connect() must be called before attempting to listen to events.');
-    }
-
-    this.log_.finest(`listen once for event => ${eventName}`);
     super.once(eventName, cb);
   }
 
@@ -133,10 +185,6 @@ class Debugger extends EventEmitter {
    * @param {function(...)} cb
    */
   off(eventName, cb) {
-    if (this.tabId_ === null) {
-      throw new Error('connect() must be called before attempting to listen to events.');
-    }
-
     super.removeListener(eventName, cb);
   }
 
@@ -147,14 +195,8 @@ class Debugger extends EventEmitter {
    * @param {function} cb
    */
   onCommandSuccess(cb) {
-    if (this.tabId_ === null) {
-      throw new Error('connect() must be called before attempting to listen to events.');
-    }
-
-    this.log_.finest(`listen for command response`);
-    super.on('commandSuccess', cb);
+    this.on('commandSuccess', cb);
   }
-
 
   /**
    * Unbind listener for command response
@@ -162,11 +204,7 @@ class Debugger extends EventEmitter {
    * @param {function} cb
    */
   offCommandSuccess(cb) {
-    if (this.tabId_ === null) {
-      throw new Error('connect() must be called before attempting to listen to events.');
-    }
-
-    super.removeListener('commandSuccess', cb);
+    this.off('commandSuccess', cb);
   }
 
   /**
@@ -174,59 +212,65 @@ class Debugger extends EventEmitter {
    *
    * @param {!string} command
    * @param {!Object} params
-   * @param {=number} timeout Optional timeout in millisecconds
+   * @param {?number} timeout Optional timeout in millisecconds
    * @return {!Promise}
    */
   sendCommand(command, params, timeout) {
-    if (this.tabId_ === null) {
-      return Promise.reject(new Error('connect() must be called before attempting to send commands.'));
+    if (!this.isConnected()) {
+      return Promise.reject(new Error('Debugger is not connected.'));
     }
 
     return new Promise((resolve, reject) => {
       this.log_.finest(`method => browser, ${command} ${JSON.stringify(params)}`);
 
-      let commandId = this.nextCommandId_++;
-
-      this.commandInfoMap_.set(commandId, {
-        resolve: resolve,
-        reject: reject,
-        name: command
-      });
-
-      let timer = null;
+      let commandId = this.nextCommandId_++,
+        clearTimeout = () => {};
 
       if (typeof timeout === 'number') {
-        timer = setTimeout(() => {
+        let timer = global.setTimeout(() => {
           this.commandInfoMap_.delete(commandId);
 
           let message = `${command} timed out after ${timeout} milliseconds`;
           this.log_.severe(message);
           reject(new error.TimeoutError(message));
         }, timeout);
+
+        clearTimeout = () => global.clearTimeout(timer);
       }
 
+      this.commandInfoMap_.set(commandId, {
+        resolve,
+        reject,
+        clearTimeout,
+        name: command
+      });
+
       chrome.debugger.sendCommand({tabId: this.tabId_}, command, params, result => {
-        timer && clearTimeout(timer);
+        if (!this.commandInfoMap_.has(commandId)) {
+          // exit if command was timed out or blocked by javascript dialog
+          return;
+        }
+
+        clearTimeout();
 
         this.commandInfoMap_.delete(commandId);
 
         if (chrome.runtime.lastError) {
-          this.log_.severe(`method <= browser ERR, ${command} ${JSON.stringify(chrome.runtime.lastError)}`);
+          this.log_.severe(`method <= browser ERR, ${command} ${chrome.runtime.lastError.message}`);
           return reject(new Error(chrome.runtime.lastError.message));
         }
 
-        // As of crrev.com/411814, Runtime.evaluate no longer returns a 'wasThrown'
-        // property in the response, so check 'exceptionDetails' instead.
-        // TODO: Ignore 'wasThrown' when we stop supporting Chrome 53.
-        if (result.wasThrown || result.exceptionDetails) {
-          this.log_.severe(`method <= browser ERR, ${command} ${JSON.stringify(result.exceptionDetails)}`);
-          return reject(new Error(`${command} was thrown error.`));
+        // Reject the returning promise for `Runtime.evalute` exceptions while evaluating the expression.
+        if (result.exceptionDetails) {
+          let error = new Error(`${command} exception was thrown during script execution`);
+          error.exceptionDetails = result.exceptionDetails;
+
+          this.log_.severe(`method <= browser ERR, ${error.message}`);
+          return reject(error);
         }
 
         this.log_.finest(`method <= browser OK, ${command} ${JSON.stringify(result)}`);
-
         this.emit('commandSuccess', command, result, timeout);
-
         resolve(result);
       });
     });
@@ -234,4 +278,4 @@ class Debugger extends EventEmitter {
 }
 
 
-module.exports = Debugger;
+module.exports = ExtensionDebugger;

@@ -20,8 +20,8 @@ gulp.task('lint', () => {
     '!app/test/web/**',
     'gulpfile.js'
   ])
-  .pipe(eslint())
-  .pipe(eslint.format());
+    .pipe(eslint())
+    .pipe(eslint.format());
 });
 
 gulp.task('webpack-background', (cb) => {
@@ -99,8 +99,8 @@ gulp.task('extras', () => {
     base: 'app',
     dot: true
   })
-  .pipe(debug({title: 'copying to dist:'}))
-  .pipe(gulp.dest('dist'));
+    .pipe(debug({title: 'copying to dist:'}))
+    .pipe(gulp.dest('dist'));
 });
 
 gulp.task('build', (cb) => {
@@ -118,8 +118,8 @@ gulp.task('clean', () => {
 gulp.task('package', () => {
   let manifest = require('./dist/manifest.json');
   return gulp.src('dist/**')
-  .pipe(zip('webdriver-extension-' + manifest.version + '.zip'))
-  .pipe(gulp.dest('package'));
+    .pipe(zip('webdriver-extension-' + manifest.version + '.zip'))
+    .pipe(gulp.dest('package'));
 });
 
 gulp.task('default', ['clean'], cb => {

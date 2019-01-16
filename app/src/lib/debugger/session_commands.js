@@ -2,10 +2,17 @@
 
 
 const error = require('selenium-webdriver/lib/error'),
-  sessions = require('./session'),
-  addSession = sessions.addSession,
-  findSession = sessions.findSession,
-  removeSession = sessions.removeSession;
+  {
+    addSession,
+    findSession,
+    removeSession,
+    Session,
+    reachedMaximumActiveSessions,
+    MAXIMUM_ACTIVE_SESSIONS
+  } = require('./session');
+
+
+let Debugger = null;
 
 
 function processCapabilities(caps) {
@@ -51,42 +58,6 @@ function processCapabilities(caps) {
 }
 
 
-function createWindow() {
-  return new Promise((resolve, reject) => {
-    chrome.windows.create({
-      url: 'about:blank'
-    }, window => {
-      if (chrome.runtime.lastError) {
-        return reject(
-          new error.WebDriverError(chrome.runtime.lastError.message)
-        );
-      } else {
-        if (window) {
-          resolve(window);
-        } else {
-          reject(new error.SessionNotCreatedError('Failed to create window.'));
-        }
-      }
-    });
-  });
-}
-
-
-function removeWindow(windowId) {
-  return new Promise((resolve, reject) => {
-    chrome.windows.remove(windowId, () => {
-      if (chrome.runtime.lastError) {
-        return reject(
-          new error.WebDriverError(chrome.runtime.lastError.message)
-        );
-      } else {
-        resolve();
-      }
-    });
-  });
-}
-
-
 /**
  * [New Session command](https://www.w3.org/TR/webdriver/#new-session)
  *
@@ -94,10 +65,10 @@ function removeWindow(windowId) {
  */
 function newSession(parameters) {
 
-  if (sessions.reachedMaximumActiveSessions()) {
+  if (reachedMaximumActiveSessions()) {
     return Promise.reject(
       new error.SessionNotCreatedError(
-        `Maximum(${sessions.MAXIMUM_ACTIVE_SESSIONS}) active sessions reached.`
+        `Maximum(${MAXIMUM_ACTIVE_SESSIONS}) active sessions reached.`
       )
     );
   }
@@ -122,7 +93,7 @@ function newSession(parameters) {
     return Promise.reject(e);
   }
 
-  let session = new sessions.Session();
+  let session = new Session();
 
   addSession(session);
 
@@ -130,20 +101,16 @@ function newSession(parameters) {
     session.setPageLoadStrategy(capsResult.pageLoadStrategy);
   }
 
-  return createWindow()
-    .then(window => {
-      session.setWindowId(window.id);
+  return session.trackTabs(Debugger.list, Debugger.new)
+    .then(() => {
+      let tab = session.getFirstTab(),
+        chromeOptions = capsResult.chromeOptions || {};
 
-      return session.getFirstTabId()
-        .then(id => session.setTargetTabId(id))
-        .then(() => {
-          let tab = session.getTargetTab(),
-            chromeOptions = capsResult.chromeOptions || {};
+      session.setCurrentTabId(tab.id);
 
-          if (chromeOptions.mobileEmulation) {
-            return tab.setMobileEmulationOverride();
-          }
-        });
+      if (chromeOptions.mobileEmulation) {
+        return tab.setMobileEmulationOverride();
+      }
     })
     .then(() => {
       return {
@@ -151,9 +118,9 @@ function newSession(parameters) {
         capabilities: capsResult
       };
     })
-    .catch((e) => {
+    .catch(e => {
       removeSession(session.getId());
-      throw(e);
+      throw new error.SessionNotCreatedError(e.message);
     });
 }
 
@@ -170,12 +137,19 @@ function deleteSession(parameters) {
     return Promise.reject(new error.NoSuchSessionError());
   }
 
-  return removeWindow(session.getWindowId())
-    .then(() => removeSession(parameters.sessionId));
+  return Debugger.close(session.getTabIds())
+    .then(() => removeSession(parameters.sessionId))
+    .catch(e => {
+      throw new error.WebDriverError(e.message);
+    });
 }
 
 
 module.exports = {
   newSession: newSession,
-  deleteSession: deleteSession
+  deleteSession: deleteSession,
+
+  set Debugger (value) {
+    Debugger = value;
+  }
 };

@@ -3,18 +3,14 @@
 const expect = require('chai').expect,
   cmd = require('selenium-webdriver/lib/command'),
   error = require('selenium-webdriver/lib/error'),
-  fakeChromeApi = require('./fake_chrome_api'),
   Executor = require('./index').Executor;
 
 
-describe('extension', function() {
+describe('debugger', function() {
 
   describe('Executor', function() {
 
     let executor;
-
-    before(fakeChromeApi.use);
-    after(fakeChromeApi.restore);
 
     beforeEach(function() {
       executor = new Executor();

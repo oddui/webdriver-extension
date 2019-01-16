@@ -4,17 +4,46 @@ const expect = require('chai').expect,
   sinon = require('sinon'),
   fakeChromeApi = require('./fake_chrome_api'),
   error = require('selenium-webdriver/lib/error'),
-  Debugger = require('./debugger');
+  Debugger = require('./extension');
 
 
-describe('extension', () => {
+describe('debugger', () => {
 
-  describe('Debugger', () => {
+  before(fakeChromeApi.use);
+  after(fakeChromeApi.restore);
+
+
+  describe('ExtensionDebugger.list', () => {
+    it('lists tabs', () => {
+      return Debugger.list()
+        .then(tabs => {
+          expect(tabs).to.be.instanceof(Array);
+        });
+    });
+  });
+
+  describe('ExtensionDebugger.new', () => {
+    it('creates an empty tab', () => {
+      return Debugger.new()
+        .then(tab => {
+          expect(typeof tab.id).to.equal('number');
+        });
+    });
+  });
+
+  describe('ExtensionDebugger.close', () => {
+    it('closes tabs', () => {
+      return Debugger.list()
+        .then(tabs => {
+          return Debugger.close(tabs.map(tab => tab.id));
+        });
+    });
+  });
+
+
+  describe('ExtensionDebugger', () => {
 
     let dbg, tab = { id: 1 };
-
-    before(fakeChromeApi.use);
-    after(fakeChromeApi.restore);
 
     beforeEach(() => dbg = new Debugger());
 
@@ -22,11 +51,7 @@ describe('extension', () => {
     describe('is event emitter', () => {
       let EVENT = 'some event', spy;
 
-      beforeEach(() => {
-        spy = sinon.spy()
-        return dbg.connect(tab.id);
-      });
-      afterEach(() => dbg.disconnect());
+      beforeEach(() => spy = sinon.spy());
 
       it('on', () => {
         dbg.on(EVENT, spy);
@@ -78,7 +103,7 @@ describe('extension', () => {
       beforeEach(() => dbg.connect(tab.id));
       afterEach(() => dbg.disconnect());
 
-      it('returns resolved promise if connect again', () => {
+      it('returns resolved promise if already connected', () => {
         return dbg.connect(tab.id)
           .then(() => expect(dbg.getTabId()).to.equal(tab.id));
       });
@@ -88,12 +113,21 @@ describe('extension', () => {
           params = { arg: 1 };
         dbg.on('method', listener);
 
-        chrome.debugger.emitEvent('method', params);
+        chrome.debugger.emitEvent({ tabId: tab.id }, 'method', params);
         expect(listener.calledWith(params)).to.be.true;
       });
 
+      it('does not emit debugger events for other sources', () => {
+        let listener = sinon.spy(),
+          params = { arg: 1 };
+        dbg.on('method', listener);
+
+        chrome.debugger.emitEvent({ tabId: 99 }, 'method', params);
+        expect(listener.called).to.be.false;
+      });
+
       it('cleans debugger state on unexpected detach', () => {
-        chrome.debugger.emitDetach('user_canceled');
+        chrome.debugger.emitDetach({ tabId: tab.id }, 'user_canceled');
         expect(dbg.getTabId()).to.be.null;
       });
     });
@@ -105,7 +139,7 @@ describe('extension', () => {
           .then(() => dbg.disconnect());
       });
 
-      it('returns resolved promise if disconnect again', () => {
+      it('returns resolved promise if not connected', () => {
         return dbg.disconnect()
           .then(() => expect(dbg.getTabId()).to.be.null);
       });
@@ -115,9 +149,12 @@ describe('extension', () => {
 
 
     describe('sendCommand', () => {
+
+      afterEach(() => dbg.disconnect());
+
       it('rejects if not connected to debuggee', () => {
         return dbg.sendCommand()
-          .catch((e) => expect(e.message).to.match(/connect\(\) must be called/i));
+          .catch(e => expect(e.message).to.match(/not\sconnected/i));
       });
 
       it('rejects if an evaluate-like method was thrown error');
@@ -125,7 +162,7 @@ describe('extension', () => {
       it('resolves with command result', () => {
         return dbg.connect(tab.id)
           .then(() => dbg.sendCommand())
-          .then((result) => {
+          .then(result => {
             expect(result).not.to.be.undefined;
             expect(dbg.commandInfoMap_.size).to.equal(0);
           });
@@ -141,12 +178,15 @@ describe('extension', () => {
       });
 
       it('rejects if blocked by JavaScript dialog', () => {
-        let promise = dbg.connect(tab.id)
-          .then(() => dbg.sendCommand('method'));
+        chrome.debugger.setCommandDuration(100);
 
-        chrome.debugger.emitEvent('Page.javascriptDialogOpening', { message: 'dialog message' });
-
-        return promise
+        return dbg.connect(tab.id)
+          .then(() => {
+            let promise = dbg.sendCommand('method');
+            chrome.debugger.emitEvent({ tabId: tab.id }, 'Page.javascriptDialogOpening', { message: 'dialog message' });
+            return promise;
+          })
+          .then(() => Promise.reject('Expected method to reject.'))
           .catch(e => {
             expect(e).to.be.instanceOf(error.UnexpectedAlertOpenError);
             expect(e.getAlertText()).to.equal('dialog message');
@@ -154,25 +194,22 @@ describe('extension', () => {
       });
 
       describe('with timeout', () => {
-        beforeEach(() => chrome.debugger.setCommandDuration(200));
+        beforeEach(() => {
+          chrome.debugger.setCommandDuration(200);
+          return dbg.connect(tab.id);
+        });
 
         it('resolves if not timed out', () => {
-          return dbg.connect(tab.id)
-            .then(() => dbg.sendCommand('method', {}, 300))
+          return dbg.sendCommand('method', {}, 300)
             .then((result) => expect(result).not.to.be.undefined);
         });
 
         it('rejects with error.TimeoutError if timed out', () => {
-          return dbg.connect(tab.id)
-            .then(() => dbg.sendCommand('method', {}, 100))
+          return dbg.sendCommand('method', {}, 100)
+            .then(() => Promise.reject('Expected method to reject.'))
             .catch(e => {
               expect(e).to.be.instanceOf(error.TimeoutError);
               expect(dbg.commandInfoMap_.size).to.equal(0);
-            })
-            .then(() => {
-              // Give enough time for the result callback to execute before
-              // the fakeChromeApi gets restored.
-              return new Promise(resolve => setTimeout(resolve, 200));
             });
         });
       });

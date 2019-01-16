@@ -71,9 +71,8 @@ class Session {
     this.pageLoadStrategy_ = PageLoadStrategy.NORMAL;
     this.secureSsl_ = true;
 
-    this.windowId_ = null;
     this.tabs_ = [];
-    this.targetTabId_ = null;
+    this.currentTabId_ = null;
 
     /**
      * List of frames for each frame to the current target frame from the
@@ -147,62 +146,54 @@ class Session {
     return this;
   }
 
-  getWindowId() {
-    return this.windowId_;
-  }
+  /**
+   * Keep track of tabs. Obtain the set of tab handles before the interaction
+   * is performed and compare it with the set after the action is performed.
+   *
+   * @param {!function} list Function to return a promise that resolves all browser tabs
+   * @param {!function} interaction The interaction to perform
+   */
+  trackTabs(list, interaction) {
+    let tabsBefore, tabsAfter;
 
-  setWindowId(windowId) {
-    this.windowId_ = windowId;
-    return this;
-  }
+    return list()
+      .then(tabs => tabsBefore = tabs.slice(0))
+      .then(() => interaction())
+      .then(() => list())
+      .then(tabs => tabsAfter = tabs.slice(0))
+      .then(() => {
+        let tabIdsBefore, tabIdsAfter;
 
-  updateTabs_() {
-    return new Promise((resolve, reject) => {
-      chrome.tabs.query({ windowId: this.windowId_ }, tabs => {
-        if (chrome.runtime.lastError) {
-          return reject(new error.WebDriverError(chrome.runtime.lastError.message));
-        } else {
-          resolve(tabs);
-        }
-      });
-    })
-      .then(tabs => {
-        // check and remove closed tabs
-        for (let i = this.tabs_.length-1; i >= 0; i--) {
-          let tab = this.tabs_[i],
-            closed = tabs.every(tabData => tabData.id !== tab.getId());
+        tabIdsBefore = tabsBefore.map(tab => tab.id);
+        tabIdsAfter = tabsAfter.map(tab => tab.id);
 
-          if (closed) {
-            this.tabs_.splice(i, 1);
-          }
-        }
+        // untrack closed tabs
+        tabsBefore
+          .filter(tab => tabIdsAfter.indexOf(tab.id) === -1)
+          .forEach(closedTab => {
+            let trackedAt = this.tabs_.findIndex(tab => tab.getId() === closedTab.id);
 
-        // check and add newly-opened tabs
-        return Promise.all(
-          tabs.map(tabData => {
-            if (!this.getTabById(tabData.id)) {
-              let tab = new Tab(tabData, this.pageLoadStrategy_);
-              this.tabs_.push(tab);
-
-              return tab.connectIfNecessary();
-            } else {
-              return Promise.resolve();
+            if (trackedAt !== -1) {
+              this.tabs_.splice(trackedAt, 1);
             }
-          })
-        );
+          });
+
+        // track newly-opened tabs
+        tabsAfter
+          .filter(tab => tabIdsBefore.indexOf(tab.id) === -1)
+          .forEach(tabData => {
+            let tab = new Tab(tabData, this.pageLoadStrategy_);
+            this.tabs_.push(tab);
+          });
       });
   }
 
   getTabIds() {
-    return this.updateTabs_()
-      .then(() => {
-        return this.tabs_.map(tab => tab.getId());
-      });
+    return this.tabs_.map(tab => tab.getId());
   }
 
-  getFirstTabId() {
-    return this.updateTabs_()
-      .then(() => this.tabs_[0].getId());
+  getFirstTab() {
+    return this.tabs_[0];
   }
 
   getTabById(id) {
@@ -217,38 +208,18 @@ class Session {
     return found;
   }
 
-  setTargetTabId(id) {
-    this.targetTabId_ = id;
+  setCurrentTabId(id) {
+    this.currentTabId_ = id;
   }
 
-  getTargetTab() {
-    let tab = this.getTabById(this.targetTabId_);
+  getCurrentTab() {
+    let tab = this.getTabById(this.currentTabId_);
 
     if (tab) {
       return tab;
     } else {
-      throw new error.NoSuchWindowError('Target window already closed.');
+      throw new error.NoSuchWindowError('Window already closed.');
     }
-  }
-
-  closeTab(id) {
-    return new Promise((resolve, reject) => {
-      chrome.tabs.remove(id, () => {
-        if (chrome.runtime.lastError) {
-          return reject(new error.WebDriverError(chrome.runtime.lastError.message));
-        } else {
-          resolve();
-        }
-      });
-    })
-      .then(() => {
-        for (let i = this.tabs_.length-1; i >= 0; i--) {
-          if (this.tabs_[i].getId() === id) {
-            this.tabs_.splice(i, 1);
-            break;
-          }
-        }
-      });
   }
 
   switchToTopFrame() {

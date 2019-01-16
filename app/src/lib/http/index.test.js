@@ -2,7 +2,7 @@
 
 const expect = require('chai').expect,
   sinon =  require('sinon'),
-  http = require('./http'),
+  http = require('./index'),
   fromXhr = http.fromXhr,
   Request = http.Request,
   Response = http.Response,

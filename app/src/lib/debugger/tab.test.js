@@ -1,34 +1,34 @@
 'use strict';
 
+
 const expect = require('chai').expect,
   sinon = require('sinon'),
   error = require('selenium-webdriver/lib/error'),
-  FakeDebugger = require('./fake_debugger'),
   PageLoadStrategy = require('./navigation_tracker').PageLoadStrategy,
-  Tab = require('./tab');
+  Tab = require('./tab'),
+  Debugger = require('./client/fake');
 
 
-describe('extension', () => {
+describe('debugger', () => {
 
   describe('Tab', () => {
     let tab, dbg;
 
     beforeEach(() => {
-      dbg = new FakeDebugger();
-      sinon.spy(dbg, 'sendCommand');
-
       tab = new Tab({ id: 1 }, PageLoadStrategy.NORMAL);
-      tab.debugger_ = dbg;
+      dbg = new Debugger();
+
+      sinon.spy(dbg, 'sendCommand');
     });
 
-    describe('connectIfNecessary', () => {
+    describe('connect', () => {
       beforeEach(() => {
         sinon.spy(dbg, 'connect');
         sinon.spy(tab.frameTracker_, 'connect');
         sinon.spy(tab.dialogManager_, 'connect');
         sinon.spy(tab.navigationTracker_, 'connect');
 
-        return tab.connectIfNecessary();
+        return tab.connect(dbg);
       });
 
       it('connects debugger, frame tracker, dialog manager and navigation tracker', () => {
@@ -37,20 +37,10 @@ describe('extension', () => {
         expect(tab.dialogManager_.connect.calledWith(dbg)).to.be.true;
         expect(tab.navigationTracker_.connect.calledWith(dbg)).to.be.true;
       });
-
-      it('resovles if already connected', () => {
-        return tab.connectIfNecessary()
-          .then(() => {
-            expect(dbg.connect.calledOnce).to.be.true;
-            expect(tab.frameTracker_.connect.calledOnce).to.be.true;
-            expect(tab.dialogManager_.connect.calledOnce).to.be.true;
-            expect(tab.navigationTracker_.connect.calledOnce).to.be.true;
-          });
-      });
     });
 
     describe('getContextIdForFrame', () => {
-      beforeEach(() => tab.connectIfNecessary());
+      beforeEach(() => tab.connect(dbg));
 
       it('calls getContextIdForFrame on frameTracker', () => {
         sinon.spy(tab.frameTracker_, 'getContextIdForFrame');
@@ -64,7 +54,7 @@ describe('extension', () => {
 
     describe('setMobileEmulationOverride', () => {
       beforeEach(() => {
-        return tab.connectIfNecessary()
+        return tab.connect(dbg)
           .then(() => dbg.sendCommand.reset())
           .then(() => tab.setMobileEmulationOverride());
       });
@@ -82,7 +72,7 @@ describe('extension', () => {
         sinon.stub(tab.navigationTracker_, 'isPendingNavigation')
           .returns(Promise.resolve(false));
 
-        return tab.connectIfNecessary();
+        return tab.connect(dbg);
       });
 
       describe('isPendingNavigation', () => {
@@ -128,7 +118,7 @@ describe('extension', () => {
 
     describe('load', () => {
       beforeEach(() => {
-        return tab.connectIfNecessary()
+        return tab.connect(dbg)
           .then(() => dbg.sendCommand.reset());
       });
 
@@ -142,7 +132,7 @@ describe('extension', () => {
 
     describe('reload', () => {
       beforeEach(() => {
-        return tab.connectIfNecessary()
+        return tab.connect(dbg)
           .then(() => dbg.sendCommand.reset());
       });
 

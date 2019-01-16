@@ -16,7 +16,7 @@ class FrameTracker {
 
   constructor() {
     this.debugger_ = null;
-    this.log_ = logging.getLogger('webdriver.extension.FrameTracker');
+    this.log_ = logging.getLogger('webdriver.debugger.FrameTracker');
     this.frameToContextMap_ = new Map();
 
     this.onExecutionContextCreated_ = this.onExecutionContextCreated_.bind(this);
